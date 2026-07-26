@@ -1,0 +1,13 @@
+# Keep .scratch versioned even when a global gitignore matches the name.
+!.scratch/
+!.scratch/**
+.scratch/**/node_modules/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Node
+node_modules/

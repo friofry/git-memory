@@ -1,0 +1,43 @@
+# Matt Pocock skill sets
+
+Lists consumed by `/setup-git-memory`. Install with repeated `-s` flags and `-a universal`:
+
+```bash
+npx skills@latest add mattpocock/skills -s research -s tdd -a universal -y
+```
+
+Do **not** vendor `setup-matt-pocock-skills` — its output is what this scaffold already wrote under `docs/agents/`.
+
+## minimal
+
+research
+grilling
+domain-modeling
+grill-with-docs
+to-spec
+to-tickets
+tdd
+code-review
+implement
+codebase-design
+
+## full
+
+research
+grilling
+domain-modeling
+grill-with-docs
+to-spec
+to-tickets
+wayfinder
+triage
+implement
+tdd
+codebase-design
+prototype
+diagnosing-bugs
+code-review
+resolving-merge-conflicts
+handoff
+improve-codebase-architecture
+writing-great-skills

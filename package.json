@@ -1,0 +1,11 @@
+{
+  "name": "git-memory",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portable layered git memory + delivery workflow + Matt Pocock skills wiring",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/friofry/git-memory"
+  }
+}
