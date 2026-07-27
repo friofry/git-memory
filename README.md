@@ -38,8 +38,8 @@ Inside `scaffold/`:
 # from a clone of this repo — copy the skill
 cp -R skills/setup-git-memory <target>/.cursor/skills/
 
-# or install via skills.sh once this repo is on GitHub:
-# npx skills@latest add <owner>/git-memory -s setup-git-memory -a universal -y
+# or install via skills.sh:
+# npx skills@latest add friofry/git-memory -s setup-git-memory -a universal -y
 ```
 
 2. In the target project, run **`/setup-git-memory`** (or attach the skill and ask it to run).
@@ -48,7 +48,7 @@ cp -R skills/setup-git-memory <target>/.cursor/skills/
 ### B. Manual
 
 ```bash
-git clone https://github.com/<owner>/git-memory.git /tmp/git-memory
+git clone https://github.com/friofry/git-memory.git /tmp/git-memory
 cd <your-project>
 
 # copy seed (do not overwrite existing AGENTS.md / CONTEXT.md blindly)
