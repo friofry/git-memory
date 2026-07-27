@@ -94,6 +94,32 @@ the move.
 | `plan`, `build`, `checks`, `review`, `memory` | [`implement-feature`](../../.cursor/skills/implement-feature/) — it hands off with `review` |
 | `rework`, `ci`, `acceptance` | [`review-change`](../../.cursor/skills/review-change/) — `rework` on a blocking finding, `ci` when clean, `acceptance` once CI is green |
 
+## How a human runs a feature
+
+You say **what** and answer **yes/no**. The agent does **how** and writes
+evidence into Git. Contracts and TDD live in files and commands, not in chat.
+
+1. **Request** — state the outcome in one sentence. Agent: `/grill-with-docs` →
+   `/create-feature-spec` (folder under [`../../specs/`](../../specs/)).
+2. **Approval** — you read `spec` / `design` / `acceptance` and approve meaning
+   and architecture. Without this, work stays at `approval`.
+3. **Build** — you say "plan and implement". Agent: `/to-tickets` →
+   `/implement-feature` (drives `/tdd`) → checks from [`../../AGENTS.md`](../../AGENTS.md) →
+   `/review-change`.
+4. **Acceptance** — you check CI + demo against `acceptance.md`. Say "accept";
+   the agent writes memory back and sets `implemented`.
+
+Human-required gates: request, approval, acceptance (plus answers during grill).
+Everything else is agent-driven by stage.
+
+One prompt that starts it:
+
+> New feature: <outcome>. Follow the delivery workflow: grill → spec → stop at
+> approval. After I OK — tickets, TDD, checks, review. Do not move `Stage:`
+> without evidence.
+
+The full 12-stage table is in [Stages](#stages) above.
+
 ## Moving a feature forward
 
 1. Produce the evidence the stage asks for.

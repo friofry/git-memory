@@ -35,11 +35,10 @@ Inside `scaffold/`:
 1. Add this skill to the target project or your user skills:
 
 ```bash
-# from a clone of this repo — copy the skill
-cp -R skills/setup-git-memory <target>/.cursor/skills/
+npx skills@latest add friofry/git-memory -s setup-git-memory -a universal -y
 
-# or install via skills.sh:
-# npx skills@latest add friofry/git-memory -s setup-git-memory -a universal -y
+# or copy from a clone:
+# cp -R skills/setup-git-memory <target>/.cursor/skills/
 ```
 
 2. In the target project, run **`/setup-git-memory`** (or attach the skill and ask it to run).
@@ -82,6 +81,47 @@ Do **not** run Matt's `/setup-matt-pocock-skills` on a project that already has 
 
 Do **not** edit files under `.agents/skills/`. Bindings and conflicts live in `docs/agents/vendored-skills.md`.
 
+### How a human runs a feature
+
+You say **what** and answer **yes/no**. The agent does **how** and writes
+evidence into Git. Contracts and TDD live in files and commands, not in chat.
+
+1. **Request** — state the outcome in one sentence. Agent: `/grill-with-docs` →
+   `/create-feature-spec` (folder under `specs/` after setup).
+2. **Approval** — you read `spec` / `design` / `acceptance` and approve meaning
+   and architecture. Without this, work stays at `approval`.
+3. **Build** — you say "plan and implement". Agent: `/to-tickets` →
+   `/implement-feature` (drives `/tdd`) → checks from `AGENTS.md` →
+   `/review-change`.
+4. **Acceptance** — you check CI + demo against `acceptance.md`. Say "accept";
+   the agent writes memory back and sets `implemented`.
+
+Human-required gates: request, approval, acceptance (plus answers during grill).
+Everything else is agent-driven by stage.
+
+One prompt that starts it:
+
+> New feature: <outcome>. Follow the delivery workflow: grill → spec → stop at
+> approval. After I OK — tickets, TDD, checks, review. Do not move `Stage:`
+> without evidence.
+
+Full 12-stage table: [`scaffold/docs/agents/delivery-workflow.md`](scaffold/docs/agents/delivery-workflow.md).
+
+### Versus vanilla Matt Pocock skills
+
+Matt's skills are the craft. This repo adds a process that survives the end of
+a chat session.
+
+| | Vanilla Matt | This repo (after setup) |
+|--|--|--|
+| Spec | One `/to-spec` document | Four files under `specs/` + `Status:` / `Stage:` |
+| "Where is the feature?" | Chat / tracker / memory | `Stage:` line in Git; `/orient-in-project` checks evidence |
+| Tickets | `.scratch/` or GitHub Issues | Same local markdown + label vocabulary + `check-memory.sh` |
+| TDD / review | `/tdd`, `/code-review` | Same craft; entry via `implement-feature` / `review-change` |
+| Contracts | "Read CONTEXT / ADR" | Plus enforceable one-home checks |
+| Setup | `/setup-matt-pocock-skills` | Adapters already in the seed — do not re-run Matt setup |
+| Autonomy | You hold the process in your head | Twelve stages in Git; human gates are request / approval / acceptance |
+
 ## Layout of this repository
 
 ```
@@ -104,6 +144,6 @@ git-memory/
 
 ## Design notes
 
-- **Upstream owns the craft** (grill, TDD, review axes). **The target repo owns placement** (`Stage:` line, paths, test commands). ADR-shaped write-up of that split is in the originating project's `docs/adr/0014-…`.
+- **Upstream owns the craft** (grill, TDD, review axes). **The target repo owns placement** (`Stage:` line, paths, test commands). ADR-shaped write-up of that split is ADR 0016 in [`friofry/starcraft-benchmark`](https://github.com/friofry/starcraft-benchmark).
 - Vendored skill bytes are pinned with `.agents/skills.sha256` after install so local edits fail the checker instead of vanishing on `npx skills update`.
 - Empty product folders stay thin on purpose — see growth rule in `scaffold/docs/memory.md`.

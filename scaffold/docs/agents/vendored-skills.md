@@ -12,6 +12,21 @@ which command proves it). Which skill runs at which delivery stage is in
 [`delivery-workflow.md`](delivery-workflow.md) — that table is the map; this file
 is the adapter underneath it.
 
+## Versus vanilla Matt Pocock skills
+
+Matt's skills are the craft. This repo adds a process that survives the end of
+a chat session.
+
+| | Vanilla Matt | This repo |
+|--|--|--|
+| Spec | One `/to-spec` document | Four files under [`../../specs/`](../../specs/) + `Status:` / `Stage:` |
+| "Where is the feature?" | Chat / tracker / memory | `Stage:` line in Git; [`orient-in-project`](../../.cursor/skills/orient-in-project/) checks evidence |
+| Tickets | `.scratch/` or GitHub Issues | Same local markdown + label vocabulary + `check-memory.sh` |
+| TDD / review | `/tdd`, `/code-review` | Same craft; entry via [`implement-feature`](../../.cursor/skills/implement-feature/) / [`review-change`](../../.cursor/skills/review-change/) |
+| Contracts | "Read CONTEXT / ADR" | Plus enforceable one-home checks |
+| Setup | `/setup-matt-pocock-skills` | Adapters already installed — do not re-run Matt setup |
+| Autonomy | You hold the process in your head | Twelve stages in Git; human gates are request / approval / acceptance |
+
 ## Not vendored, on purpose
 
 | Upstream skill | Why not |
