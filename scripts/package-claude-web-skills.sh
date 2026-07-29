@@ -11,12 +11,15 @@
 #   ./scripts/package-claude-web-skills.sh --set minimal
 #   ./scripts/package-claude-web-skills.sh --matt-dir /path/to/mattpocock/skills
 #   ./scripts/package-claude-web-skills.sh --no-adapt    # raw copies, no Claude rewrites
+#   ./scripts/package-claude-web-skills.sh --repo-only   # skip Matt skills
 #
 # Outputs under dist/claude-web/:
 #   skills/<name>.zip          — upload each in Customize → Skills → Upload
 #   all-skill-zips.zip         — convenience bag of the individual zips
 #   plugin/git-memory-claude/  — Claude Code / org plugin layout (optional)
 #   MANIFEST.txt
+#
+# Requires Bash 3.2+ (macOS /bin/bash is fine), python3, zip, unzip, git.
 
 set -euo pipefail
 
@@ -26,18 +29,14 @@ SET="full"
 MATT_DIR=""
 ADAPT=1
 INCLUDE_PLUGIN=1
+INCLUDE_MATT=1
 DESC_MAX=200
 VENV="${ROOT}/.venv-pack"
 ADAPT_PY="${ROOT}/scripts/_adapt_claude_web_skill.py"
+PYTHON=""
 
-ensure_python() {
-  if [[ -x "${VENV}/bin/python" ]]; then
-    PYTHON="${VENV}/bin/python"
-    return
-  fi
-  python3 -m venv "$VENV"
-  PYTHON="${VENV}/bin/python"
-}
+die() { echo "error: $*" >&2; exit 1; }
+log() { echo "$*" >&2; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -45,21 +44,49 @@ while [[ $# -gt 0 ]]; do
     --matt-dir) MATT_DIR="${2:?}"; shift 2 ;;
     --no-adapt) ADAPT=0; shift ;;
     --no-plugin) INCLUDE_PLUGIN=0; shift ;;
+    --repo-only) INCLUDE_MATT=0; shift ;;
     -h|--help)
-      sed -n '2,20p' "$0"
+      sed -n '2,25p' "$0"
       exit 0
       ;;
     *)
-      echo "Unknown arg: $1" >&2
-      exit 1
+      die "unknown arg: $1"
       ;;
   esac
 done
 
 if [[ "$SET" != "full" && "$SET" != "minimal" ]]; then
-  echo "--set must be full or minimal" >&2
-  exit 1
+  die "--set must be full or minimal"
 fi
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+}
+
+need_cmd python3
+need_cmd zip
+need_cmd unzip
+need_cmd git
+need_cmd find
+need_cmd awk
+
+ensure_python() {
+  if [[ -x "${VENV}/bin/python" ]]; then
+    PYTHON="${VENV}/bin/python"
+  elif [[ -x "${VENV}/bin/python3" ]]; then
+    PYTHON="${VENV}/bin/python3"
+  else
+    log "Creating packaging venv at ${VENV} ..."
+    python3 -m venv "$VENV" || die "python3 -m venv failed (install python3-venv)"
+    if [[ -x "${VENV}/bin/python" ]]; then
+      PYTHON="${VENV}/bin/python"
+    else
+      PYTHON="${VENV}/bin/python3"
+    fi
+  fi
+  [[ -x "$PYTHON" ]] || die "venv python not executable: $PYTHON"
+  "$PYTHON" -c 'import re,sys' || die "venv python cannot import stdlib"
+}
 
 read_matt_names() {
   local section="$1"
@@ -70,16 +97,27 @@ read_matt_names() {
   ' "${ROOT}/matt-skill-sets.txt"
 }
 
-mapfile -t MATT_NAMES < <(read_matt_names "$SET")
-if [[ ${#MATT_NAMES[@]} -eq 0 ]]; then
-  echo "No Matt skill names found for set=$SET in matt-skill-sets.txt" >&2
-  exit 1
+# Bash 3.2-safe: no mapfile / associative arrays.
+MATT_NAMES=()
+if [[ "$INCLUDE_MATT" -eq 1 ]]; then
+  while IFS= read -r _name; do
+    [[ -n "$_name" ]] || continue
+    MATT_NAMES+=("$_name")
+  done < <(read_matt_names "$SET")
+  if [[ ${#MATT_NAMES[@]} -eq 0 ]]; then
+    die "no Matt skill names found for set=$SET in matt-skill-sets.txt"
+  fi
 fi
 
 resolve_matt_dir() {
   if [[ -n "$MATT_DIR" ]]; then
-    [[ -d "$MATT_DIR" ]] || { echo "Matt dir not found: $MATT_DIR" >&2; exit 1; }
-    printf '%s\n' "$MATT_DIR"
+    [[ -d "$MATT_DIR/skills" || -d "$MATT_DIR" ]] || die "Matt dir not found: $MATT_DIR"
+    if [[ -d "$MATT_DIR/skills" ]]; then
+      printf '%s\n' "$MATT_DIR"
+    else
+      # Allow passing the inner skills/ parent incorrectly; normalize.
+      printf '%s\n' "$(cd "$MATT_DIR/.." && pwd)"
+    fi
     return
   fi
   if [[ -d /tmp/mattpocock-skills/skills ]]; then
@@ -87,71 +125,119 @@ resolve_matt_dir() {
     return
   fi
   local clone=/tmp/mattpocock-skills
-  echo "Cloning mattpocock/skills into $clone ..." >&2
+  log "Cloning mattpocock/skills into $clone ..."
   rm -rf "$clone"
-  git clone --depth 1 https://github.com/mattpocock/skills.git "$clone" >&2
+  git clone --depth 1 https://github.com/mattpocock/skills.git "$clone" \
+    || die "git clone mattpocock/skills failed (pass --matt-dir or --repo-only)"
   printf '%s\n' "$clone"
 }
 
-MATT_ROOT="$(resolve_matt_dir)"
+MATT_ROOT=""
+if [[ "$INCLUDE_MATT" -eq 1 ]]; then
+  MATT_ROOT="$(resolve_matt_dir)"
+  [[ -d "${MATT_ROOT}/skills" ]] || die "no skills/ under Matt root: $MATT_ROOT"
+fi
 
 find_matt_skill() {
   local name="$1"
-  local hit
-  hit="$(find "${MATT_ROOT}/skills" -type d -name "$name" 2>/dev/null | head -n 1 || true)"
-  if [[ -z "$hit" || ! -f "$hit/SKILL.md" ]]; then
-    echo "Matt skill not found: $name (under ${MATT_ROOT}/skills)" >&2
-    return 1
+  local hit=""
+  # Prefer engineering/, then productivity/, then anywhere under skills/.
+  for cand in \
+    "${MATT_ROOT}/skills/engineering/${name}" \
+    "${MATT_ROOT}/skills/productivity/${name}" \
+    "${MATT_ROOT}/skills/misc/${name}" \
+    "${MATT_ROOT}/skills/personal/${name}"
+  do
+    if [[ -f "${cand}/SKILL.md" ]]; then
+      hit="$cand"
+      break
+    fi
+  done
+  if [[ -z "$hit" ]]; then
+    hit="$(find "${MATT_ROOT}/skills" -type d -name "$name" 2>/dev/null | head -n 1 || true)"
+  fi
+  if [[ -z "$hit" || ! -f "${hit}/SKILL.md" ]]; then
+    die "Matt skill not found: $name (under ${MATT_ROOT}/skills)"
   fi
   printf '%s\n' "$hit"
 }
 
-# Repo-authored skills: installer pair + scaffold workflow skills.
-# Prefer skills/ over scaffold/.cursor/skills/ when both exist (setup lives only in skills/).
-declare -a REPO_SKILL_SRCS=()
-declare -A REPO_SKILL_SEEN=()
+skill_already_listed() {
+  local needle="$1"
+  local s
+  for s in "${REPO_SKILL_SRCS[@]+"${REPO_SKILL_SRCS[@]}"}"; do
+    [[ "$(basename "$s")" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
+REPO_SKILL_SRCS=()
 
 add_repo_skill() {
   local src="$1"
   local name
   name="$(basename "$src")"
-  if [[ -n "${REPO_SKILL_SEEN[$name]:-}" ]]; then
-    return
+  if skill_already_listed "$name"; then
+    return 0
   fi
-  REPO_SKILL_SEEN[$name]=1
+  [[ -d "$src" ]] || die "repo skill directory missing: $src"
+  [[ -f "${src}/SKILL.md" ]] || die "repo skill missing SKILL.md: $src"
   REPO_SKILL_SRCS+=("$src")
 }
 
 add_repo_skill "${ROOT}/skills/setup-git-memory"
 add_repo_skill "${ROOT}/skills/update-git-memory"
+
+shopt -s nullglob
 for d in "${ROOT}/scaffold/.cursor/skills"/*; do
   [[ -d "$d" && -f "$d/SKILL.md" ]] || continue
   add_repo_skill "$d"
 done
+shopt -u nullglob
+
+if [[ ${#REPO_SKILL_SRCS[@]} -eq 0 ]]; then
+  die "no repo skills found under skills/ or scaffold/.cursor/skills/"
+fi
+
+# Preflight Matt paths before writing any zip.
+MATT_SRCS=()
+if [[ "$INCLUDE_MATT" -eq 1 ]]; then
+  for name in "${MATT_NAMES[@]}"; do
+    MATT_SRCS+=("$(find_matt_skill "$name")")
+  done
+fi
+
+EXPECTED=$(( ${#REPO_SKILL_SRCS[@]} + ${#MATT_SRCS[@]} ))
+log "Will pack ${#REPO_SKILL_SRCS[@]} repo + ${#MATT_SRCS[@]} Matt = ${EXPECTED} skill zips"
+
+ensure_python
 
 rm -rf "$OUT"
-mkdir -p "$OUT/skills" "$OUT/staging" "$OUT/plugin/git-memory-claude/skills" \
-  "$OUT/plugin/git-memory-claude/.claude-plugin"
+mkdir -p "$OUT/skills" "$OUT/staging"
+if [[ "$INCLUDE_PLUGIN" -eq 1 ]]; then
+  mkdir -p "$OUT/plugin/git-memory-claude/skills" \
+    "$OUT/plugin/git-memory-claude/.claude-plugin"
+fi
 
 stage_copy() {
   local src="$1"
   local dest="$2"
   mkdir -p "$(dirname "$dest")"
   rm -rf "$dest"
-  cp -a "$src" "$dest"
-  # OpenAI agent stubs are irrelevant on Claude Web.
+  cp -R "$src" "$dest" || die "copy failed: $src → $dest"
   rm -rf "$dest/agents"
 }
 
 adapt_skill_md() {
   local skill_md="$1"
   local skill_name="$2"
-  local kind="$3" # repo|matt
-  local args=("$ADAPT_PY" "$skill_md" "$skill_name" "$kind" --desc-max "$DESC_MAX")
+  local kind="$3"
+  local args
+  args=("$ADAPT_PY" "$skill_md" "$skill_name" "$kind" --desc-max "$DESC_MAX")
   if [[ "$ADAPT" -eq 1 ]]; then
     args+=(--adapt)
   fi
-  "$PYTHON" "${args[@]}"
+  "$PYTHON" "${args[@]}" || die "adapt failed for $skill_name"
 }
 
 zip_skill() {
@@ -159,56 +245,71 @@ zip_skill() {
   local name
   name="$(basename "$staged")"
   local zip_path="${OUT}/skills/${name}.zip"
+  [[ -f "${staged}/SKILL.md" ]] || die "staged skill missing SKILL.md: $staged"
   (
     cd "$(dirname "$staged")"
     rm -f "$zip_path"
-    zip -qr "$zip_path" "$name"
+    # Zip the folder itself (required Claude Web layout).
+    zip -qr "$zip_path" "$name" || die "zip failed for $name"
   )
-  # sanity: zip must contain name/SKILL.md
-  if ! unzip -l "$zip_path" | grep -q " ${name}/SKILL.md$"; then
-    echo "Bad zip layout for $name" >&2
-    unzip -l "$zip_path" >&2
-    exit 1
+  if ! unzip -l "$zip_path" 2>/dev/null | grep -E "/${name}/SKILL\.md$| ${name}/SKILL\.md$" >/dev/null; then
+    # Fallback: any SKILL.md under the skill folder prefix.
+    if ! unzip -l "$zip_path" 2>/dev/null | grep -F "${name}/SKILL.md" >/dev/null; then
+      log "Bad zip layout for $name:"
+      unzip -l "$zip_path" >&2 || true
+      die "zip for $name does not contain ${name}/SKILL.md"
+    fi
   fi
-  echo "  packed ${name}.zip"
+  log "  packed ${name}.zip ($(wc -c < "$zip_path" | tr -d ' ') bytes)"
 }
 
-ensure_python
-echo "Packaging Claude Web skills (set=$SET, adapt=$ADAPT) → $OUT"
+log "Packaging Claude Web skills (set=$SET, adapt=$ADAPT, matt=$INCLUDE_MATT) → $OUT"
 
 # --- repo skills ---
 for src in "${REPO_SKILL_SRCS[@]}"; do
   name="$(basename "$src")"
   dest="${OUT}/staging/${name}"
+  log "→ repo skill: $name"
   stage_copy "$src" "$dest"
   if [[ "$name" == "setup-git-memory" ]]; then
-    # Bundle scaffold so Claude Web can install without a separate clone.
     rm -rf "${dest}/scaffold"
-    cp -a "${ROOT}/scaffold" "${dest}/scaffold"
-    # Drop nested .cursor/skills from bundled scaffold? Keep them — setup copies them into the target repo.
+    cp -R "${ROOT}/scaffold" "${dest}/scaffold" || die "failed to embed scaffold/"
   fi
   adapt_skill_md "${dest}/SKILL.md" "$name" "repo"
   zip_skill "$dest"
   if [[ "$INCLUDE_PLUGIN" -eq 1 ]]; then
-    cp -a "$dest" "${OUT}/plugin/git-memory-claude/skills/${name}"
+    rm -rf "${OUT}/plugin/git-memory-claude/skills/${name}"
+    cp -R "$dest" "${OUT}/plugin/git-memory-claude/skills/${name}"
   fi
 done
 
 # --- Matt skills ---
-for name in "${MATT_NAMES[@]}"; do
-  src="$(find_matt_skill "$name")"
+i=0
+for src in "${MATT_SRCS[@]+"${MATT_SRCS[@]}"}"; do
+  name="$(basename "$src")"
   dest="${OUT}/staging/${name}"
+  log "→ Matt skill: $name"
   stage_copy "$src" "$dest"
   adapt_skill_md "${dest}/SKILL.md" "$name" "matt"
   zip_skill "$dest"
   if [[ "$INCLUDE_PLUGIN" -eq 1 ]]; then
-    cp -a "$dest" "${OUT}/plugin/git-memory-claude/skills/${name}"
+    rm -rf "${OUT}/plugin/git-memory-claude/skills/${name}"
+    cp -R "$dest" "${OUT}/plugin/git-memory-claude/skills/${name}"
   fi
+  i=$((i + 1))
 done
+
+ZIP_COUNT="$(find "${OUT}/skills" -maxdepth 1 -name '*.zip' | wc -l | tr -d ' ')"
+if [[ "$ZIP_COUNT" -ne "$EXPECTED" ]]; then
+  log "Zips currently in ${OUT}/skills:"
+  ls -la "${OUT}/skills" >&2 || true
+  die "expected ${EXPECTED} skill zips, found ${ZIP_COUNT}"
+fi
 
 # Convenience bag of individual zips (still one-skill-per-upload).
 (
   cd "${OUT}/skills"
+  # Avoid a bare glob failing under nullglob-off with no matches (already checked).
   zip -qr "${OUT}/all-skill-zips.zip" ./*.zip
 )
 
@@ -234,9 +335,11 @@ fi
   echo "generated: $(date -u +%Y-%m-%dT%H:%MZ)"
   echo "matt set: ${SET}"
   echo "adapt for Claude Web: ${ADAPT}"
-  echo "matt source: ${MATT_ROOT}"
+  echo "matt source: ${MATT_ROOT:-"(skipped)"}"
+  echo "skill zip count: ${ZIP_COUNT}"
   echo
-  echo "Upload each file in skills/*.zip via Claude → Customize → Skills → Upload a skill."
+  echo "Upload EACH file in skills/*.zip via Claude → Customize → Skills → Upload a skill."
+  echo "setup-git-memory.zip is only the installer (+ embedded scaffold) — the other zips are siblings in the same folder."
   echo "Enable every uploaded skill. Claude composes them; do not rely on .agents/skills/ paths."
   echo
   echo "Repo skills:"
@@ -244,18 +347,29 @@ fi
     echo "  - $(basename "$src")"
   done
   echo
-  echo "Matt skills (${SET}):"
-  for name in "${MATT_NAMES[@]}"; do
-    echo "  - ${name}"
+  if [[ "$INCLUDE_MATT" -eq 1 ]]; then
+    echo "Matt skills (${SET}):"
+    for name in "${MATT_NAMES[@]}"; do
+      echo "  - ${name}"
+    done
+  else
+    echo "Matt skills: skipped (--repo-only)"
+  fi
+  echo
+  echo "All skill zips:"
+  # Portable listing without relying on ls formatting.
+  find "${OUT}/skills" -maxdepth 1 -name '*.zip' -print | sort | while IFS= read -r z; do
+    echo "  $(basename "$z")"
   done
   echo
   echo "Artifacts:"
-  echo "  skills/*.zip                 — Claude Web uploads (one skill each)"
+  echo "  skills/*.zip                 — Claude Web uploads (one skill each)  [${ZIP_COUNT} files]"
   echo "  all-skill-zips.zip           — bag of those zips for download/share"
   if [[ "$INCLUDE_PLUGIN" -eq 1 ]]; then
     echo "  git-memory-claude-plugin.zip — Claude Code / org plugin layout"
   fi
 } | tee "${OUT}/MANIFEST.txt"
 
-echo
-echo "Done. See ${OUT}/MANIFEST.txt"
+log ""
+log "Done: ${ZIP_COUNT} skill zips in ${OUT}/skills/"
+log "If you only noticed setup-git-memory.zip before: look at the other *.zip files next to it (see MANIFEST.txt)."

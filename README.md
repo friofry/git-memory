@@ -144,10 +144,12 @@ Artifacts land in `dist/claude-web/`:
 
 | Artifact | Use |
 |----------|-----|
-| `skills/<name>.zip` | Upload each in **Customize → Skills → Upload a skill**, then enable |
-| `all-skill-zips.zip` | Convenience bag of those ZIPs (still upload one-by-one) |
+| `skills/<name>.zip` | **26 files** (full set) — upload each in **Customize → Skills → Upload a skill**, then enable |
+| `all-skill-zips.zip` | Convenience bag of those ZIPs (still upload one-by-one from inside) |
 | `git-memory-claude-plugin.zip` | Optional Claude Code / org plugin layout |
 | `MANIFEST.txt` | Exact skill list for the chosen Matt set |
+
+`setup-git-memory.zip` is only the installer (it embeds `scaffold/`). The Matt craft skills and the other repo skills are **sibling** ZIPs in the same `skills/` folder — not inside that archive. If the script stops early it now fails with a count error instead of leaving a single ZIP.
 
 The packager clones [mattpocock/skills](https://github.com/mattpocock/skills) (or use `--matt-dir`), rewrites `.agents/skills/…` path refs to “uploaded skill” names, truncates long descriptions to Claude’s ~200-char limit, and embeds `scaffold/` inside `setup-git-memory.zip`.
 
