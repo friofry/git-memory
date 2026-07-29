@@ -16,6 +16,7 @@ this repo is the domain-free extract.
 |-------|------|
 | `scaffold/` | Files copied into a target project |
 | `skills/setup-git-memory/` | One-shot setup skill (`/setup-git-memory`) |
+| `skills/update-git-memory/` | Safe updater for existing projects (`/update-git-memory`) |
 | `matt-skill-sets.txt` | `minimal` and `full` lists for `npx skills add` |
 
 Inside `scaffold/`:
@@ -23,7 +24,7 @@ Inside `scaffold/`:
 - `docs/memory.md` — layer map and one-home rules
 - `docs/agents/delivery-workflow.md` — stages `request` … `memory`
 - `docs/agents/vendored-skills.md` — how Matt skills bind to this layout
-- `.cursor/skills/` — `ask-git-memory`, `orient-in-project`, `create-feature-spec`, `implement-feature`, `review-change`, `review-architecture`
+- `.cursor/skills/` — `ask-git-memory`, `update-git-memory`, `orient-in-project`, `create-feature-spec`, `implement-feature`, `review-change`, `review-architecture`
 - `scripts/check-memory.sh` — enforceable consistency (status, stage, vendored bytes, ticket labels)
 - `.github/workflows/memory.yml` — runs the checker on markdown PRs
 - Templates for specs, ADRs, reviews, spikes
@@ -76,7 +77,13 @@ Then fill `docs/product/charter.md`, grow `CONTEXT.md`, and put real test comman
 | Where are we? | `/orient-in-project` |
 | New feature | `/create-feature-spec` → human approval → `/to-tickets` → `/implement-feature` |
 | Review | `/review-change` (drives vendored `/code-review`) |
+| Refresh git-memory scaffold | Install/refresh the updater with `npx skills@latest add friofry/git-memory -s update-git-memory -a universal -y`, then run `/update-git-memory` |
 | Refresh Matt skills | `npx skills@latest update && ./scripts/check-memory.sh --fix` |
+
+`npx skills@latest update` refreshes skills installed through the CLI, but it
+does not overwrite scaffold files already copied into a project. The
+`/update-git-memory` skill compares the current upstream scaffold, adds missing
+files, and asks before merging any existing file that differs.
 
 Do **not** run Matt's `/setup-matt-pocock-skills` on a project that already has this seed — it would overwrite `docs/agents/issue-tracker.md`, `triage-labels.md`, and `domain.md`.
 
@@ -131,7 +138,8 @@ git-memory/
 ├── LICENSE
 ├── matt-skill-sets.txt
 ├── skills/
-│   └── setup-git-memory/     # the installer skill
+│   ├── setup-git-memory/     # the installer skill
+│   └── update-git-memory/    # the safe updater skill
 └── scaffold/                 # bytes copied into targets
     ├── AGENTS.md
     ├── CONTEXT.md
