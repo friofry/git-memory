@@ -90,6 +90,7 @@ Tell the user:
 - How to ask what happens next: `/ask-git-memory` or attach `.cursor/skills/ask-git-memory`
 - How to resume work: `/orient-in-project` or attach `.cursor/skills/orient-in-project`
 - How to start a feature: `/create-feature-spec` (or the skill path)
+- How to refresh git-memory later: install or refresh `/update-git-memory` with `npx skills@latest add friofry/git-memory -s update-git-memory -a universal -y`, then run it
 - How to refresh Matt skills later: `npx skills@latest update && ./scripts/check-memory.sh --fix`
 - That product charter, glossary terms, architecture boundaries, and project hard constraints are still theirs to fill
 
