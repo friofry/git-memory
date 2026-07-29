@@ -17,7 +17,8 @@ this repo is the domain-free extract.
 | `scaffold/` | Files copied into a target project |
 | `skills/setup-git-memory/` | One-shot setup skill (`/setup-git-memory`) |
 | `skills/update-git-memory/` | Safe updater for existing projects (`/update-git-memory`) |
-| `matt-skill-sets.txt` | `minimal` and `full` lists for `npx skills add` |
+| `matt-skill-sets.txt` | `minimal` and `full` lists for `npx skills add` / Claude Web packaging |
+| `scripts/package-claude-web-skills.sh` | Build per-skill ZIPs for Claude.ai upload |
 
 Inside `scaffold/`:
 
@@ -130,6 +131,26 @@ a chat session.
 | Setup | `/setup-matt-pocock-skills` | Adapters already in the seed — do not re-run Matt setup |
 | Autonomy | You hold the process in your head | Twelve stages in Git; human gates are request / approval / acceptance |
 
+## Claude Web (upload ZIPs)
+
+Claude.ai only accepts **one skill per ZIP** (`skill-name/SKILL.md` at the archive root). It cannot pull from `npx skills` or GitHub. Package this repo’s skills plus Matt’s set:
+
+```bash
+./scripts/package-claude-web-skills.sh              # full Matt set
+./scripts/package-claude-web-skills.sh --set minimal
+```
+
+Artifacts land in `dist/claude-web/`:
+
+| Artifact | Use |
+|----------|-----|
+| `skills/<name>.zip` | Upload each in **Customize → Skills → Upload a skill**, then enable |
+| `all-skill-zips.zip` | Convenience bag of those ZIPs (still upload one-by-one) |
+| `git-memory-claude-plugin.zip` | Optional Claude Code / org plugin layout |
+| `MANIFEST.txt` | Exact skill list for the chosen Matt set |
+
+The packager clones [mattpocock/skills](https://github.com/mattpocock/skills) (or use `--matt-dir`), rewrites `.agents/skills/…` path refs to “uploaded skill” names, truncates long descriptions to Claude’s ~200-char limit, and embeds `scaffold/` inside `setup-git-memory.zip`.
+
 ## Layout of this repository
 
 ```
@@ -137,6 +158,8 @@ git-memory/
 ├── README.md
 ├── LICENSE
 ├── matt-skill-sets.txt
+├── scripts/
+│   └── package-claude-web-skills.sh   # Claude Web ZIP packager
 ├── skills/
 │   ├── setup-git-memory/     # the installer skill
 │   └── update-git-memory/    # the safe updater skill
