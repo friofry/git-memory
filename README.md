@@ -23,7 +23,7 @@ Inside `scaffold/`:
 - `docs/memory.md` — layer map and one-home rules
 - `docs/agents/delivery-workflow.md` — stages `request` … `memory`
 - `docs/agents/vendored-skills.md` — how Matt skills bind to this layout
-- `.cursor/skills/` — `orient-in-project`, `create-feature-spec`, `implement-feature`, `review-change`, `review-architecture`
+- `.cursor/skills/` — `ask-git-memory`, `orient-in-project`, `create-feature-spec`, `implement-feature`, `review-change`, `review-architecture`
 - `scripts/check-memory.sh` — enforceable consistency (status, stage, vendored bytes, ticket labels)
 - `.github/workflows/memory.yml` — runs the checker on markdown PRs
 - Templates for specs, ADRs, reviews, spikes
@@ -72,6 +72,7 @@ Then fill `docs/product/charter.md`, grow `CONTEXT.md`, and put real test comman
 
 | Intent | Skill |
 |--------|-------|
+| What should happen next? | `/ask-git-memory` |
 | Where are we? | `/orient-in-project` |
 | New feature | `/create-feature-spec` → human approval → `/to-tickets` → `/implement-feature` |
 | Review | `/review-change` (drives vendored `/code-review`) |

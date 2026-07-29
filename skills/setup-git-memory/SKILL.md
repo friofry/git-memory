@@ -87,6 +87,7 @@ Do **not** edit files under `.agents/skills/` after install. Bindings go in `doc
 Tell the user:
 
 - What was created / merged
+- How to ask what happens next: `/ask-git-memory` or attach `.cursor/skills/ask-git-memory`
 - How to resume work: `/orient-in-project` or attach `.cursor/skills/orient-in-project`
 - How to start a feature: `/create-feature-spec` (or the skill path)
 - How to refresh Matt skills later: `npx skills@latest update && ./scripts/check-memory.sh --fix`

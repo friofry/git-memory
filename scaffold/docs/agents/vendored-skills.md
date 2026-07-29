@@ -32,7 +32,7 @@ a chat session.
 | Upstream skill | Why not |
 |----------------|---------|
 | `setup-matt-pocock-skills` | Its output *is* [`issue-tracker.md`](issue-tracker.md), [`triage-labels.md`](triage-labels.md) and [`domain.md`](domain.md). Running it would overwrite answers we already gave. |
-| `ask-matt` | A router over Matt's set; [`delivery-workflow.md`](delivery-workflow.md) is ours. |
+| `ask-matt` | A router over Matt's set; [`ask-git-memory`](../../.cursor/skills/ask-git-memory/) routes this repo's evidence and [`delivery-workflow.md`](delivery-workflow.md) owns its stages. |
 | `grill-me`, `teach`, `writing-beats`, `writing-fragments`, `writing-shape`, `obsidian-vault`, `edit-article` | No delivery stage in this repo. |
 | Everything under upstream `skills/deprecated/` and `skills/in-progress/` | Upstream says so. |
 

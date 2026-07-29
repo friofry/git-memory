@@ -10,6 +10,10 @@ Read [`docs/memory.md`](docs/memory.md) once if you are new to the repo layout.
 
 Use [`.cursor/skills/orient-in-project/`](.cursor/skills/orient-in-project/) to rebuild an evidence-based map of project state and next action. Human-chosen direction (when set) lives in `context.md` — distinct from the glossary [`CONTEXT.md`](CONTEXT.md). See `docs/memory.md` for the case-collision note.
 
+When the state is known but the next procedure is not, use
+[`.cursor/skills/ask-git-memory/`](.cursor/skills/ask-git-memory/) to route the
+evidence to one delivery action without advancing the stage.
+
 ## How work moves
 
 Features travel through the stages in [`docs/agents/delivery-workflow.md`](docs/agents/delivery-workflow.md) — request → research → spec → human approval → plan → build → checks → review → rework → CI → human acceptance → memory write-back. The current stage of one feature is the `Stage:` line in `specs/<NN>-<slug>/spec.md`; move it in the same commit as the evidence for that stage.
