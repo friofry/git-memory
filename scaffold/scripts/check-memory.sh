@@ -21,6 +21,15 @@ shopt -s nullglob
 
 cd "$(dirname "$0")/.." || exit 1
 
+# The one header reader and the one hashing shim. Sourcing rather than forking
+# keeps each check cheap: the old inline readers cost four processes per field.
+if [ -r scripts/lib/git-memory-lib.sh ]; then
+  . scripts/lib/git-memory-lib.sh
+else
+  printf '%s: missing scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
+  exit 2
+fi
+
 self=$(basename "$0")
 nl=$'\n'
 
@@ -88,6 +97,10 @@ for r in README.md AGENTS.md CONTEXT.md docs specs rules .cursor/skills template
 done
 
 doc_files() {
+  # An empty $roots would leave "find -name '*.md'", which GNU find silently
+  # treats as "find ." while BSD find rejects outright — the same repository
+  # then passes on Linux and fails on macOS. Nothing to search is not an error.
+  [ -n "$roots" ] || return 0
   # shellcheck disable=SC2086
   find $roots -name '*.md' -not -path '*/node_modules/*' 2>/dev/null | sort
 }
@@ -303,25 +316,32 @@ check_spec_files() {
 
 check_link_direction() {
   local bad=0 f
-  for f in CONTEXT.md $(find docs/domain docs/adr -name '*.md' 2>/dev/null | sort); do
+  # Read the find output line by line rather than word-splitting an unquoted
+  # command substitution: a stable-layer file whose name contains a space was
+  # split into non-existent paths and skipped in silence by the [ -f ] guard.
+  while IFS= read -r f; do
     [ -f "$f" ] || continue
     if grep -qE '\]\([^)]*(specs/|\.scratch/)' "$f"; then
       err "stable layer links into volatile layer: $f (see docs/memory.md rule 2)"
       bad=$((bad + 1))
     fi
-  done
+  done < <({ printf 'CONTEXT.md\n'; find docs/domain docs/adr -name '*.md' 2>/dev/null | sort; })
   [ "$bad" -eq 0 ] && ok "CONTEXT.md, docs/domain and docs/adr do not link into specs/ or .scratch/"
 }
 
 # --- 6. every .scratch feature folder has a canonical spec ---------------------
 
 check_scratch_orphans() {
-  local bad=0 d slug
+  local bad=0 d slug match
   [ -d .scratch ] || { ok ".scratch/ absent (nothing to check)"; return; }
   for d in .scratch/*/; do
     [ -d "$d" ] || continue
     slug=$(basename "$d")
-    if ! ls -d specs/[0-9][0-9][0-9]-"$slug"/ >/dev/null 2>&1; then
+    # A glob collected into a variable, not `ls -d <glob>`: shopt -s nullglob
+    # erases a non-matching glob, so `ls -d` ran with no arguments at all,
+    # listed the current directory and exited 0. The check could never fail.
+    match=$(printf '%s' specs/[0-9][0-9][0-9]-"$slug"/)
+    if [ -z "$match" ] || [ ! -d "$match" ]; then
       err "ticket folder without canonical spec: $d (expected specs/<NN>-$slug/)"
       bad=$((bad + 1))
     fi
@@ -337,7 +357,16 @@ lock_skill_names() {
 }
 
 generate_skills_manifest() {
-  find .agents/skills -type f 2>/dev/null | sort | xargs -r sha256sum
+  # No xargs -r (not POSIX; BSD xargs runs the command once with no arguments
+  # instead of skipping it) and no bare sha256sum (macOS ships shasum only).
+  # An empty file list must produce empty output, not a hash of stdin.
+  local p h
+  find .agents/skills -type f 2>/dev/null | sort | while IFS= read -r p; do
+    [ -n "$p" ] || continue
+    h=$(gm_sha256 < "$p" | awk '{ print $1; exit }')
+    [ -n "$h" ] || return 1
+    printf '%s  %s\n' "$h" "$p"
+  done
 }
 
 check_vendored_skills() {
@@ -378,6 +407,18 @@ check_vendored_skills() {
     return
   fi
   if [ "$FIX" -eq 1 ]; then
+    # Never write an empty manifest. Without a hashing tool the generator
+    # returns nothing, and --fix would overwrite the tamper baseline with it —
+    # turning a missing dependency into silent, permanent loss of the thing the
+    # check exists to compare against.
+    if ! gm_have_sha256; then
+      err "no sha256 tool available (sha256sum, shasum or openssl); refusing to overwrite .agents/skills.sha256 with an empty manifest"
+      return
+    fi
+    if [ -z "$expected" ] && [ -n "$(find .agents/skills -type f 2>/dev/null)" ]; then
+      err "skills manifest came back empty while .agents/skills holds files; refusing to overwrite .agents/skills.sha256"
+      return
+    fi
     printf '%s\n' "$expected" > .agents/skills.sha256
     ok ".agents/skills.sha256 regenerated"
   else
@@ -479,7 +520,7 @@ implied_address() {
 # load-bearing — docs/memory.md forbids YAML front matter precisely so this stays
 # a sed expression — and the key may hold a space ("Blocked by", "Implemented in").
 header_value() {
-  without_fences "$2" | sed -n "s/^$1: *//p" | sed 's/[[:space:]]*$//' | head -1
+  gm_header "$2" "$1"
 }
 
 # --- 10. the root context.md rename --------------------------------------------

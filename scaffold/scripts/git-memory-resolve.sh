@@ -71,10 +71,17 @@ diag() {
 
 headings() {
   awk '
+    # Strip the CR first. Without this a CRLF checkout leaves one inside every
+    # heading, the backtick-anchored M: match fails, and the entire M: family
+    # silently disappears from the index — on Windows, WSL, or any clone with
+    # core.autocrlf=true.
+    { sub(/\r$/, "") }
     /^```/    { fenced = !fenced; next }
     fenced    { next }
-    /<!--/    { commented = 1 }
-    commented { if (/-->/) commented = 0; next }
+    # A comment that opens and closes on one line must not swallow the lines
+    # after it, and a heading carrying a trailing comment is still a heading.
+    /<!--/    { if (!/-->/) { commented = 1 }; next }
+    commented { if (/-->/) { commented = 0 }; next }
     /^#+[ \t]*[^ \t]/ {
       match($0, /^#+/)
       level = RLENGTH

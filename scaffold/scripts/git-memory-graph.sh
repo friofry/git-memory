@@ -8,9 +8,17 @@
 #   scripts/git-memory-graph.sh --help         usage, exit 0
 #
 set -uo pipefail
+shopt -s nullglob
 
 here=$(cd "$(dirname "$0")" && pwd) || exit 1
 cd "$here/.." || exit 1
+
+if [ -r "$here/lib/git-memory-lib.sh" ]; then
+  . "$here/lib/git-memory-lib.sh"
+else
+  printf '%s: missing scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
+  exit 2
+fi
 
 self=$(basename "$0")
 resolver="$here/git-memory-resolve.sh"
@@ -69,13 +77,9 @@ EOF
 # as a graph of nulls with real statuses and stages, which is what it is.
 
 header_value() {
-  local file=$1 key=$2
-  [ -f "$file" ] || return 0
-  sed -n -e "s/^$key:[[:space:]]*//p" -e "s/^\\*\\*$key:\\*\\*[[:space:]]*//p" \
-    "$file" 2>/dev/null |
-    head -1 |
-    tr "$tab$cr$us" '   ' |
-    sed -e 's/[[:space:]]*$//'
+  # The shared reader, then flatten the separators this script's own record
+  # format reserves. gm_header already strips CR, fences and HTML comments.
+  gm_header "$1" "$2" | tr "$tab$cr$us" '   '
 }
 
 # A comma-separated header line, one item per output line, trimmed, empties

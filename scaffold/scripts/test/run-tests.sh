@@ -29,7 +29,7 @@ tab=$(printf '\t')
 
 VERBOSE=0
 KEEP=0
-SECTIONS="resolver graph packet checker"
+SECTIONS="resolver graph packet checker headers"
 
 usage() {
   cat <<'EOF'
@@ -59,7 +59,7 @@ while [ "$#" -gt 0 ]; do
     -v|--verbose) VERBOSE=1 ;;
     --keep)       KEEP=1 ;;
     -h|--help)    usage; exit 0 ;;
-    resolver|graph|packet|checker) SECTIONS=$1 ;;
+    resolver|graph|packet|checker|headers) SECTIONS=$1 ;;
     *)
       printf '%s: unknown argument %s\n\n' "$self" "$1" >&2
       usage >&2
@@ -246,11 +246,15 @@ clone_template() { # builder, template name, destination
 }
 
 install_scripts() { # repo
-  mkdir -p "$1/scripts"
+  mkdir -p "$1/scripts/lib"
   cp "$scripts_dir/git-memory-resolve.sh" \
      "$scripts_dir/git-memory-graph.sh" \
      "$scripts_dir/git-memory-packet.sh" \
      "$scripts_dir/check-memory.sh" "$1/scripts/"
+  # The shared header reader travels with them; every script refuses to run
+  # without it rather than falling back to a private copy, which is the whole
+  # point of there being one reader.
+  cp "$scripts_dir/lib/git-memory-lib.sh" "$1/scripts/lib/"
   chmod +x "$1"/scripts/*.sh
 }
 
@@ -593,6 +597,22 @@ mut_stage_on_ticket()   { set_field "$1" "$ticket_md" Stage build; }
 mut_dangling_address()  { set_field "$1" "$ticket_md" "Blocked by" T:007/99; }
 mut_undeclared_method() { set_field "$1" "$ticket_md" Refs M:ticket-nonexistent; }
 mut_root_context()      { printf '# Direction\n\nWork on the envelope.\n' > "$1/context.md"; }
+
+# A ticket folder whose feature spec was renamed or never created. This check
+# was dead for the whole of v1: shopt -s nullglob erased the non-matching glob,
+# bare `ls -d` listed the current directory and exited 0, so the `if !` branch
+# was unreachable and every orphan was reported as fine.
+mut_scratch_orphan() {
+  mkdir -p "$1/.scratch/ghost-feature/issues"
+  write "$1/.scratch/ghost-feature/issues/01-question.md" <<'EOF'
+# A ticket whose feature does not exist
+
+ID: T:404/01
+Type: research
+Status: needs-triage
+Parent: F:404-ghost-feature
+EOF
+}
 
 mut_duplicate_method() {
   write "$1/docs/method/gates-again.md" <<'EOF'
@@ -1047,6 +1067,7 @@ test_checker() {
   case_fail "an M: address declared twice" "is declared twice" mut_duplicate_method
   case_fail "a root context.md" "git mv context.md active-context.md" mut_root_context
   case_fail "two tickets numbered 03" "duplicate ticket number 03" mut_duplicate_ticket_number
+  case_fail "a .scratch folder with no canonical spec" "ticket folder without canonical spec" mut_scratch_orphan
 
   # --- --fix regenerates the specs table ---
   repo=$(new_repo)
@@ -1100,7 +1121,123 @@ test_checker() {
   expect_has "$RUN_OUT" "is missing acceptance.md" "checker: it names the missing file"
 }
 
-# --- 11. dispatch ---------------------------------------------------------------
+# --- 11. the shared header reader ----------------------------------------------
+# One reader, in scripts/lib/git-memory-lib.sh. Four separate implementations
+# existed before and only one skipped fenced blocks, so every case below was a
+# live defect in at least three of the four consumers.
+
+test_headers() {
+  local repo out
+
+  # --- a fenced example header must not be read as the real one ---
+  repo=$(new_repo)
+  make_v2_repo "$repo"
+  write "$repo/specs/007-auth-envelope/spec.md" <<'EOF'
+# Signed auth envelope
+
+The header of a spec looks like this:
+
+```
+ID: F:999-worked-example
+Type: bug
+Status: draft
+Stage: request
+```
+
+ID: F:007-auth-envelope
+Type: feature
+Status: active
+Stage: build
+Parent: none
+
+## Outcome
+
+A caller can prove an event came from the service that claims to have sent it.
+EOF
+  sync_specs_table "$repo"
+  run "$repo" git-memory-graph.sh --format ndjson
+  expect_has "$RUN_OUT" '"status":"active"' "headers: a fenced example does not fool the graph's status"
+  expect_has "$RUN_OUT" '"stage":"build"' "headers: a fenced example does not fool the graph's stage"
+  expect_lacks "$RUN_OUT" 'F:999-worked-example' "headers: the fenced example's ID never reaches the graph"
+  run "$repo" check-memory.sh
+  expect_status 0 "headers: a spec carrying a fenced example header still passes"
+
+  # --- a CRLF checkout reads identically to an LF one ---
+  repo=$(new_repo)
+  make_v2_repo "$repo"
+  find "$repo/docs" "$repo/specs" "$repo/.scratch" -name '*.md' -exec sed -e 's/$/\r/' -i.bak {} \; 2>/dev/null
+  find "$repo" -name '*.md.bak' -exec rm -f {} \; 2>/dev/null
+  run "$repo" git-memory-resolve.sh --all
+  expect_status 0 "headers: --all still exits 0 on a CRLF checkout"
+  expect_has "$RUN_OUT" "M:gate-approval" "headers: the M: family survives a CRLF checkout"
+  run "$repo" git-memory-resolve.sh M:gate-approval
+  expect_status 0 "headers: an M: address still resolves on a CRLF checkout"
+  run "$repo" git-memory-graph.sh --format ndjson
+  expect_has "$RUN_OUT" '"type":"feature"' "headers: a header value carries no trailing CR into the graph"
+  expect_lacks "$RUN_OUT" '\r' "headers: no carriage return reaches the ndjson projection"
+
+  # --- the legacy bold form reads the same as the plain one ---
+  repo=$(new_repo)
+  make_v2_repo "$repo"
+  write "$repo/.scratch/auth-envelope/issues/03-envelope-signing.md" <<'EOF'
+# Sign the envelope
+
+ID: T:007/03
+Type: implementation
+**Status:** ready-for-agent
+Parent: F:007-auth-envelope
+EOF
+  run "$repo" git-memory-graph.sh --format ndjson
+  expect_has "$RUN_OUT" '"status":"ready-for-agent"' "headers: the bold **Status:** form reaches the graph"
+  run "$repo" check-memory.sh
+  expect_status 0 "headers: a ticket using the bold form still passes the checker"
+
+  # --- a title is a level-one heading, not any heading and not a fence ---
+  repo=$(new_repo)
+  make_v2_repo "$repo"
+  write "$repo/specs/007-auth-envelope/spec.md" <<'EOF'
+```sh
+# not a title, a shell comment inside a fence
+```
+
+### Not a title either, it is a level-three heading
+
+# Signed auth envelope
+
+ID: F:007-auth-envelope
+Type: feature
+Status: active
+Stage: build
+Parent: none
+
+## Outcome
+
+A caller can prove an event came from the service that claims to have sent it.
+EOF
+  sync_specs_table "$repo"
+  # gm_title is asserted against directly: the md projection does not print a
+  # title, so going through a consumer would prove nothing either way.
+  out=$(. "$scripts_dir/lib/git-memory-lib.sh" && gm_title "$repo/specs/007-auth-envelope/spec.md")
+  expect_equal "$out" "Signed auth envelope" "headers: the title is the level-one heading"
+  expect_lacks "$out" "shell comment inside a fence" "headers: a fenced comment is never a title"
+  expect_lacks "$out" "level-three heading" "headers: a sub-heading is never a title"
+
+  # --- a stable-layer file whose name contains a space is still checked ---
+  repo=$(new_repo)
+  make_v2_repo "$repo"
+  mkdir -p "$repo/docs/domain"
+  write "$repo/docs/domain/event envelope.md" <<'EOF'
+# Event envelope
+
+A stable layer must not link down into [a spec](../../specs/007-auth-envelope/).
+EOF
+  run "$repo" check-memory.sh
+  expect_status 1 "headers: a doc whose filename contains a space is not skipped"
+  expect_has "$RUN_OUT" "stable layer links into volatile layer" \
+    "headers: the space-named file is the one reported"
+}
+
+# --- 12. dispatch ---------------------------------------------------------------
 
 for section in $SECTIONS; do
   case "$section" in
@@ -1108,6 +1245,7 @@ for section in $SECTIONS; do
     graph)    test_graph ;;
     packet)   test_packet ;;
     checker)  test_checker ;;
+    headers)  test_headers ;;
   esac
 done
 

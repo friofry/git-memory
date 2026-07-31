@@ -13,6 +13,13 @@ shopt -s nullglob
 
 cd "$(dirname "$0")/.." || exit 1
 
+if [ -r scripts/lib/git-memory-lib.sh ]; then
+  . scripts/lib/git-memory-lib.sh
+else
+  printf '%s: missing scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
+  exit 2
+fi
+
 self=$(basename "$0")
 
 # The address index is tab-separated; a literal tab in a pattern is the kind of
@@ -259,7 +266,7 @@ resolve_node() {
 
 read_stage() {
   if [ -z "$stage" ]; then
-    stage=$(sed -n 's/^Stage: *//p' "$spec_file" 2>/dev/null | tr -d '\015' | head -1)
+    stage=$(gm_header "$spec_file" Stage)
     stage_source="the Stage: line of $spec_file"
     [ -n "$stage" ] || die \
       "no stage given and $spec_file carries no Stage: line" \
@@ -407,13 +414,11 @@ headings_of() {
 # \r as a carriage return, and a CRLF checkout would leave one inside every
 # value the header lines carry.
 header_line() { # file, key
-  [ -f "$1" ] || return 0
-  sed -n "s/^$2: *//p" "$1" | tr -d '\015' | head -1
+  gm_header "$1" "$2"
 }
 
 title_of() {
-  [ -f "$1" ] || return 0
-  sed -n 's/^# *//p' "$1" | tr -d '\015' | head -1
+  gm_title "$1"
 }
 
 # A Refs:/Children:/Blocked by: line, one address per line, whitespace trimmed.
@@ -616,7 +621,7 @@ body_slice() {
     path=${row#*"$tab"}
     case "$path" in
       */issues/*)
-        status=$(sed -n -e 's/^\*\*Status:\*\* *//p' -e 's/^Status: *//p' "$path" | tr -d '\015' | head -1)
+        status=$(gm_header "$path" Status)
         title=$(title_of "$path")
         printf -- '- %s — %s [%s]\n' "$addr" "$title" "${status:-no status}"
         n=$((n + 1))
