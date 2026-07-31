@@ -95,7 +95,7 @@ Orientation recovers **facts** from the repository (skill [`.cursor/skills/orien
 — a root `context.md` and `CONTEXT.md` are the same path. One clobbers the other on
 checkout, and the loser is whichever the tool happened to write second. The rename
 is decided and done: the human-direction file is `active-context.md` at the repo
-root, seeded from [`templates/context.md`](../templates/context.md).
+root, seeded from [`templates/active-context.md`](../templates/active-context.md).
 `scripts/check-memory.sh` fails on a root `context.md` and prints the `git mv`
 command to fix it:
 
@@ -136,7 +136,7 @@ Start thin. Split a file only when it is too large or when two topics change at 
 | What a term means | `CONTEXT.md` |
 | Deep domain invariant | `docs/domain/<topic>.md` |
 | Why we chose X over Y | `docs/adr/` |
-| Human-chosen direction / active goal | `active-context.md` (optional; template at `templates/context.md`) |
+| Human-chosen direction / active goal | `active-context.md` (optional; template at `templates/active-context.md`) |
 | What this feature must do | `specs/.../spec.md` |
 | Which node this is | Its path; the `ID:` line restates the address the path implies |
 | What kind of work a node is | `Type:` line on the node file (vocabulary: `docs/method/work-types.md`) |

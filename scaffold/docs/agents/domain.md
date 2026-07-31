@@ -5,7 +5,7 @@ How engineering skills should consume this repo's domain documentation.
 ## Before exploring, read these
 
 - **[`CONTEXT.md`](../../CONTEXT.md)** at the repo root — canonical glossary (grill / domain-modeling write here)
-- **[`docs/domain/`](../domain/)** — deeper invariants
+- **`docs/domain/`** — deeper invariants (created on the first one; the growth rule in [`../memory.md`](../memory.md) forbids inventing the folder ahead of content)
 - **[`docs/adr/`](../adr/)** — ADRs that touch the area
 - **[`docs/architecture/`](../architecture/)** — module boundaries and data flow (when present)
 - Layer map: **[`docs/memory.md`](../memory.md)**

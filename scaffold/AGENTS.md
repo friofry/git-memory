@@ -71,5 +71,5 @@ Stop and escalate before:
 - Tickets / wayfinding: [`.scratch/`](.scratch/)
 - Triage `Status:` labels: [`docs/agents/triage-labels.md`](docs/agents/triage-labels.md)
 - Domain consumption rules: [`docs/agents/domain.md`](docs/agents/domain.md)
-- Repeatable procedures: [`.cursor/skills/`](.cursor/skills/) (repo-authored) · [`.agents/skills/`](.agents/skills/) (vendored, see [`docs/agents/vendored-skills.md`](docs/agents/vendored-skills.md))
+- Repeatable procedures: [`.cursor/skills/`](.cursor/skills/) (repo-authored) · `.agents/skills/` (vendored; the directory appears on first `npx skills add` — see [`docs/agents/vendored-skills.md`](docs/agents/vendored-skills.md))
 - Checkable constraints: [`rules/`](rules/)
