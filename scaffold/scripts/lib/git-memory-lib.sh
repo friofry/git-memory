@@ -84,7 +84,22 @@ gm_title() {
   ' "$1" 2>/dev/null
 }
 
-# --- 4. a content hash ---------------------------------------------------------
+# --- 4. the stage vocabulary ---------------------------------------------------
+
+# gm_stage_is_known <value>  ->  exit 0 if it is one of the twelve stages
+#
+# docs/agents/delivery-workflow.md owns the vocabulary; this is its executable
+# copy and the doc wins on any disagreement. It lives here because it existed
+# verbatim in two scripts, and a closed set that is written down twice is a
+# closed set that will eventually be written down differently.
+gm_stage_is_known() {
+  case "$1" in
+    request|research|spec|approval|plan|build|checks|review|rework|ci|acceptance|memory) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# --- 5. a content hash ---------------------------------------------------------
 
 # gm_sha256  ->  reads stdin, prints the hex digest, or exits non-zero
 #

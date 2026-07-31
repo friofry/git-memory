@@ -187,12 +187,8 @@ check_status_home() {
 # --- 2b. delivery stage has one home and a known value -------------------------
 # Vocabulary and stage/status mapping: docs/agents/delivery-workflow.md
 
-stage_is_known() {
-  case "$1" in
-    request|research|spec|approval|plan|build|checks|review|rework|ci|acceptance|memory) return 0 ;;
-    *) return 1 ;;
-  esac
-}
+# The twelve stages live in scripts/lib/git-memory-lib.sh, once.
+stage_is_known() { gm_stage_is_known "$1"; }
 
 check_stage_home() {
   local bad=0 f value
@@ -685,6 +681,63 @@ check_node_ids() {
   [ "$bad" -eq 0 ] && ok "every ID: line matches the address its own path implies"
 }
 
+# --- 15b. no ticket waits on itself --------------------------------------------
+# Owner: docs/agents/issue-tracker.md, "Blocking". A ticket is unblocked when
+# every address it names is finished, so a cycle is not a slow queue — it is a
+# frontier that can never open, and nothing else in the system reports it. The
+# graph draws the edges and says naming the problem belongs here.
+
+# Every "<from><TAB><to>" blocking edge, ticket addresses only.
+blocking_edges() {
+  local kind f id value a
+  while IFS=$'\t' read -r kind f; do
+    [ "$kind" = ticket ] || continue
+    id=$(header_value ID "$f")
+    [ -n "$id" ] || continue
+    value=$(header_value "Blocked by" "$f")
+    [ -z "$value" ] && continue
+    printf '%s\n' "$value" | tr ',' "$nl" | while IFS= read -r a; do
+      a=$(printf '%s' "$a" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+      [ -n "$a" ] && printf '%s\t%s\n' "$id" "$a"
+    done
+  done < <(node_files)
+}
+
+check_blocked_by_cycles() {
+  local edges cycle
+  edges=$(blocking_edges)
+  if [ -z "$edges" ]; then
+    ok "no Blocked by: edges to check for cycles"
+    return
+  fi
+  # Iterative edge removal: repeatedly drop every ticket that blocks nobody.
+  # Whatever survives is exactly the set on a cycle. Kahn's algorithm without
+  # the arrays bash 3.2 does not have.
+  cycle=$(printf '%s\n' "$edges" | awk -F'\t' '
+    { from[NR] = $1; to[NR] = $2; live[NR] = 1; n = NR }
+    END {
+      changed = 1
+      while (changed) {
+        changed = 0
+        for (i = 1; i <= n; i++) {
+          if (!live[i]) continue
+          blocks_someone = 0
+          for (j = 1; j <= n; j++) {
+            if (live[j] && to[j] == from[i]) { blocks_someone = 1; break }
+          }
+          if (!blocks_someone) { live[i] = 0; changed = 1 }
+        }
+      }
+      for (i = 1; i <= n; i++) if (live[i]) print from[i] " -> " to[i]
+    }
+  ')
+  if [ -n "$cycle" ]; then
+    err "Blocked by: cycle — these tickets wait on each other and can never reach the frontier (see docs/agents/issue-tracker.md): $(printf '%s' "$cycle" | tr '\n' ';' | sed 's/;$//')"
+    return
+  fi
+  ok "no ticket waits on itself through Blocked by:"
+}
+
 # --- 15. every address on a node file resolves ---------------------------------
 # Owner: docs/method/addressing.md. Resolution is the resolver's, in both senses:
 # this check never parses an address, it only splits comma-separated lists and
@@ -823,6 +876,7 @@ check_ticket_numbers
 check_node_types
 check_node_ids
 check_node_links
+check_blocked_by_cycles
 
 if [ "$STRICT" -eq 1 ]; then
   check_node_headers
@@ -830,9 +884,9 @@ if [ "$STRICT" -eq 1 ]; then
   check_implemented_in
 fi
 
-echo
+printf '\n'
 if [ "$failures" -gt 0 ]; then
   printf '%d memory consistency failure(s)\n' "$failures"
   exit 1
 fi
-echo 'memory is consistent'
+printf 'memory is consistent\n'

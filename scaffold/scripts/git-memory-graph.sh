@@ -60,9 +60,11 @@ A repository with no specs prints nothing and exits 0. That is an empty graph,
 not an error — a scaffold installed yesterday has no work in it yet.
 
 Header values are read as written. A ticket carrying a Stage: line, a Type:
-outside the closed set, or a Blocked by: address that resolves to nothing all
-appear here unchanged; reporting them is scripts/check-memory.sh's job, and a
-graph that silently repaired them would hide the failure it exists to expose.
+outside the closed set, a Blocked by: address that resolves to nothing, or a
+blocking cycle all appear here unchanged; reporting them is
+scripts/check-memory.sh's job — including the cycle, which it now detects — and
+a graph that silently repaired them would hide the failure it exists to expose.
+Drawing a cycle you can see is the point: --format dot renders it as a loop.
 EOF
 }
 

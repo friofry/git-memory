@@ -101,12 +101,8 @@ EOF
 # docs/method/packet-profiles.md owns this table; this is its executable copy and
 # the doc wins on any disagreement.
 
-stage_is_known() {
-  case "$1" in
-    request|research|spec|approval|plan|build|checks|review|rework|ci|acceptance|memory) return 0 ;;
-    *) return 1 ;;
-  esac
-}
+# The twelve stages live in scripts/lib/git-memory-lib.sh, once.
+stage_is_known() { gm_stage_is_known "$1"; }
 
 # Prints the layers this stage carries; exit 1 for a stage with no profile.
 profile_layers() {
@@ -431,9 +427,11 @@ resolve_quiet() {
 }
 
 # The tickets and spikes of this feature, read off the address index rather than
-# guessed from a glob. Rows are "<address>\t<path>".
+# guessed from a glob. Rows are "<address>\t<path>". The index is walked once,
+# in resolve_node, and reused: re-running --all per helper meant one packet
+# scanned the whole repository five times over.
 feature_children() {
-  bash "$resolver" --all | awk -F'\t' -v feat="$feature_addr" '
+  printf '%s\n' "$index" | awk -F'\t' -v feat="$feature_addr" '
     $1 ~ /^(ADR|TERM|M):/ { inside = 0; next }
     $1 ~ /^F:/            { inside = ($1 == feat); next }
     inside                { print }
@@ -441,7 +439,7 @@ feature_children() {
 }
 
 index_family() { # ADR / TERM
-  bash "$resolver" --all | awk -F'\t' -v fam="$1:" 'index($1, fam) == 1 { print }'
+  printf '%s\n' "$index" | awk -F'\t' -v fam="$1:" 'index($1, fam) == 1 { print }'
 }
 
 # --- 5. the six layers ----------------------------------------------------------
@@ -907,17 +905,37 @@ estimated_tokens=0
 # estimate is over budget, then print. The size line reports the measurement of
 # the render it is printed in, because only its own digits change between the
 # two.
+set_size_note() { # bytes
+  estimated_tokens=$(($1 / 4))
+  if [ -n "$budget" ]; then
+    size_note=$(printf '%s bytes, ~%s tokens (estimated as bytes / 4), against --budget %s' "$1" "$estimated_tokens" "$budget")
+  else
+    size_note=$(printf '%s bytes, ~%s tokens (estimated as bytes / 4), no --budget' "$1" "$estimated_tokens")
+  fi
+}
+
+# The size line is inside the thing it measures, so writing it changes the
+# answer. Measuring once reported the length of a render still carrying the
+# "(measuring)" placeholder — eleven characters standing in for about seventy —
+# which under-reported every packet and, worse, enforced --budget against that
+# wrong number. Iterate to a fixed point instead: stop when the render's real
+# length equals the length its own size line claims. Only digits move between
+# passes, so it settles in two or three.
+measure() {
+  local bytes claimed k
+  for k in 1 2 3 4; do
+    bytes=$(byte_len "$(render)")
+    claimed=${size_note%% *}
+    [ "$claimed" = "$bytes" ] && break
+    set_size_note "$bytes"
+  done
+  estimated_tokens=$((bytes / 4))
+}
+
 emit() {
-  local out bytes over i
+  local over i
   for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
-    out=$(render)
-    bytes=$(byte_len "$out")
-    estimated_tokens=$((bytes / 4))
-    if [ -n "$budget" ]; then
-      size_note=$(printf '%s bytes, ~%s tokens (estimated as bytes / 4), against --budget %s' "$bytes" "$estimated_tokens" "$budget")
-    else
-      size_note=$(printf '%s bytes, ~%s tokens (estimated as bytes / 4), no --budget' "$bytes" "$estimated_tokens")
-    fi
+    measure
     if [ -n "$budget" ] && [ "$estimated_tokens" -gt "$budget" ]; then
       over=$(( (estimated_tokens - budget) * 4 ))
       truncate_lowest "$over" && continue

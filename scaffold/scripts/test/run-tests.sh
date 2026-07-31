@@ -598,6 +598,29 @@ mut_dangling_address()  { set_field "$1" "$ticket_md" "Blocked by" T:007/99; }
 mut_undeclared_method() { set_field "$1" "$ticket_md" Refs M:ticket-nonexistent; }
 mut_root_context()      { printf '# Direction\n\nWork on the envelope.\n' > "$1/context.md"; }
 
+# Two tickets waiting on each other. Not a slow queue — a frontier that can
+# never open, and until now nothing in the system reported it.
+mut_blocking_cycle() {
+  write "$1/.scratch/auth-envelope/issues/01-envelope-schema.md" <<'EOF'
+# Envelope schema
+
+ID: T:007/01
+Type: interface
+Status: needs-triage
+Parent: F:007-auth-envelope
+Blocked by: T:007/03
+EOF
+  write "$1/.scratch/auth-envelope/issues/03-envelope-signing.md" <<'EOF'
+# Sign the envelope
+
+ID: T:007/03
+Type: implementation
+Status: needs-triage
+Parent: F:007-auth-envelope
+Blocked by: T:007/01
+EOF
+}
+
 # A ticket folder whose feature spec was renamed or never created. This check
 # was dead for the whole of v1: shopt -s nullglob erased the non-matching glob,
 # bare `ls -d` listed the current directory and exited 0, so the `if !` branch
@@ -1068,6 +1091,23 @@ test_checker() {
   case_fail "a root context.md" "git mv context.md active-context.md" mut_root_context
   case_fail "two tickets numbered 03" "duplicate ticket number 03" mut_duplicate_ticket_number
   case_fail "a .scratch folder with no canonical spec" "ticket folder without canonical spec" mut_scratch_orphan
+  case_fail "two tickets blocking each other" "Blocked by: cycle" mut_blocking_cycle
+
+  # A blocking chain that is deep but acyclic must not be mistaken for a cycle.
+  repo=$(new_repo)
+  make_v2_repo "$repo"
+  write "$repo/.scratch/auth-envelope/issues/03-envelope-signing.md" <<'EOF'
+# Sign the envelope
+
+ID: T:007/03
+Type: implementation
+Status: needs-triage
+Parent: F:007-auth-envelope
+Blocked by: T:007/01
+EOF
+  run "$repo" check-memory.sh
+  expect_status 0 "checker: an acyclic blocking chain is not reported as a cycle"
+  expect_has "$RUN_OUT" "no ticket waits on itself" "checker: it says the blocking edges are acyclic"
 
   # --- --fix regenerates the specs table ---
   repo=$(new_repo)
@@ -1221,6 +1261,19 @@ EOF
   expect_equal "$out" "Signed auth envelope" "headers: the title is the level-one heading"
   expect_lacks "$out" "shell comment inside a fence" "headers: a fenced comment is never a title"
   expect_lacks "$out" "level-three heading" "headers: a sub-heading is never a title"
+
+  # --- the reported size is the size of the packet you are holding ---
+  # The size line is inside what it measures, so it was reporting the length of
+  # a render still carrying the "(measuring)" placeholder — and --budget was
+  # enforced against that under-count.
+  repo=$(new_repo)
+  make_v2_repo "$repo"
+  run "$repo" git-memory-packet.sh F:007-auth-envelope build
+  expect_status 0 "headers: a build packet prints"
+  local claimed actual
+  claimed=$(printf '%s' "$RUN_OUT" | sed -n 's/^- Size: \([0-9][0-9]*\) bytes.*/\1/p' | head -1)
+  actual=$(printf '%s\n' "$RUN_OUT" | wc -c | tr -d ' ')
+  expect_equal "$claimed" "$actual" "headers: the packet's reported size equals its real size"
 
   # --- a stable-layer file whose name contains a space is still checked ---
   repo=$(new_repo)
