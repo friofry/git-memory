@@ -12,21 +12,38 @@ already wrote under `docs/agents/`.
 
 ## Choosing a set
 
-Take `full` unless the target repository is small enough that a shorter skill list
-is the point. `minimal` covers the stages a feature cannot skip — research, spec,
-plan, build, checks, review — and drops the eight skills that serve stages you
-reach less often:
-
-- `wayfinder`, `triage` — needed once an effort outgrows one session's ticket queue.
-- `prototype`, `diagnosing-bugs` — a timeboxed spike, and a hard bug at `rework`.
-- `resolving-merge-conflicts`, `handoff` — a conflicted merge, and a session ending
-  mid-stage.
-- `improve-codebase-architecture` — a periodic scan whose output enters as a new
-  `request`.
-- `writing-great-skills` — only when editing a skill under `.cursor/skills/`.
+Take `full` unless the target repository is small enough that a shorter list is the
+point. `minimal` keeps the craft a feature cannot be delivered without — the
+interview, the domain model, TDD, review, module design and the debugging loop —
+and drops the six that serve situations you reach less often: a throwaway spike
+(`prototype`), a conflicted merge (`resolving-merge-conflicts`), a periodic
+architecture scan (`improve-codebase-architecture`), an effort that outgrows one
+session's queue (`wayfinder`), the glossary-and-ADR variant of the interview
+(`grill-with-docs`), and skill authoring (`writing-great-skills`).
 
 Adding one later is a single `npx skills@latest add … -a universal -y` followed by
 `./scripts/check-memory.sh --fix` to re-pin the vendored bytes.
+
+## Not vendored, because this repository owns the stage
+
+Six upstream skills were vendored before v2 and are not any more. Each was the
+entry point for a stage this repository now drives itself, and two entry points
+for one stage is how an agent picks the wrong one:
+
+| Upstream | Superseded by | Why |
+|----------|---------------|-----|
+| `to-spec` | `/create-feature-spec` | Upstream writes one document; a spec here is four files plus a node header, and their presence is checked |
+| `to-tickets` | `/plan-feature` | Five typed ticket boilerplates, `Blocked by:` edges, cycle detection and a scenario-coverage step upstream has no equivalent for |
+| `implement` | `/implement-feature` | Upstream is fourteen lines, most of them "use /tdd" |
+| `triage` | `docs/agents/triage-labels.md` | The label vocabulary is closed here and enforced by `check-memory.sh` |
+| `handoff` | `M:handoff-pr` | Upstream writes the handoff to an OS temp directory, which does not survive a cloud agent's container |
+| `wayfinder` (partial) | the work graph | Frontier, blockers and cycles are computed from node headers; the fog-clearing interview is still upstream's, so it stays in `full` |
+
+`grilling`, `domain-modeling`, `tdd`, `code-review`, `codebase-design`,
+`diagnosing-bugs`, `prototype`, `research`, `grill-with-docs`,
+`resolving-merge-conflicts` and `improve-codebase-architecture` have no
+equivalent here and are not going to get one. They answer *how to do the work
+well*; this repository answers *where the output lands and what proves it*.
 
 Which skill runs at which delivery stage, and which repo-authored skill is the entry
 point that drives it, is one table with one home:
@@ -44,13 +61,10 @@ This file lists vendored skills only. The repo-authored skills under
 research
 grilling
 domain-modeling
-grill-with-docs
-to-spec
-to-tickets
 tdd
 code-review
-implement
 codebase-design
+diagnosing-bugs
 
 ## full
 
@@ -58,17 +72,12 @@ research
 grilling
 domain-modeling
 grill-with-docs
-to-spec
-to-tickets
-wayfinder
-triage
-implement
 tdd
 codebase-design
-prototype
-diagnosing-bugs
 code-review
+diagnosing-bugs
+prototype
 resolving-merge-conflicts
-handoff
 improve-codebase-architecture
+wayfinder
 writing-great-skills

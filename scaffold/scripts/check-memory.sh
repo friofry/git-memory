@@ -327,6 +327,30 @@ check_link_direction() {
 
 # --- 6. every .scratch feature folder has a canonical spec ---------------------
 
+# --- 5b. the two harness skill directories hold the same skills ----------------
+# Owner: CLAUDE.md. Claude Code reads .claude/skills/, every other harness reads
+# .cursor/skills/. The seed ships the first as a symbolic link to the second so
+# there is one home; a checkout that could not restore the link leaves a copy,
+# and a copy is exactly what drifts.
+
+check_harness_skills() {
+  local a b only
+  [ -e .claude/skills ] || { ok ".claude/skills absent (Claude Code not set up here)"; return; }
+  [ -d .cursor/skills ] || { err ".claude/skills exists but .cursor/skills does not: the link has no target"; return; }
+  if [ -L .claude/skills ]; then
+    ok ".claude/skills is a link to .cursor/skills (one home for the repo skills)"
+    return
+  fi
+  a=$(cd .cursor/skills && printf '%s\n' */ 2>/dev/null | sort)
+  b=$(cd .claude/skills && printf '%s\n' */ 2>/dev/null | sort)
+  if [ "$a" = "$b" ]; then
+    ok ".claude/skills is a copy of .cursor/skills and holds the same skills"
+    return
+  fi
+  only=$(printf '%s\n%s\n' "$a" "$b" | sort | uniq -u | tr '\n' ' ')
+  err ".claude/skills and .cursor/skills disagree (differing: ${only% }): re-link with ln -sfn ../.cursor/skills .claude/skills"
+}
+
 check_scratch_orphans() {
   local bad=0 d slug match
   [ -d .scratch ] || { ok ".scratch/ absent (nothing to check)"; return; }
@@ -871,6 +895,7 @@ check_spec_files
 check_link_direction
 check_scratch_orphans
 check_root_context
+check_harness_skills
 check_method_refs
 check_ticket_numbers
 check_node_types

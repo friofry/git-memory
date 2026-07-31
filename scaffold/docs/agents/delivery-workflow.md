@@ -143,7 +143,7 @@ remember.
 | `research` | `../../.agents/skills/research/` | `../../.agents/skills/grilling/`, `../../.agents/skills/prototype/` for a timeboxed question |
 | `spec` | [`../../.cursor/skills/create-feature-spec/`](../../.cursor/skills/create-feature-spec/) | `../../.agents/skills/to-spec/`, `../../.agents/skills/codebase-design/` for the seams |
 | `approval` | Human | `../../.agents/skills/grill-with-docs/`, `../../.agents/skills/domain-modeling/` — ADR and glossary as it goes |
-| `plan` | `../../.agents/skills/to-tickets/` | `../../.agents/skills/wayfinder/` when the effort outgrows one session; `../../.agents/skills/triage/` to label the queue |
+| `plan` | [`../../.cursor/skills/plan-feature/`](../../.cursor/skills/plan-feature/) | `../../.agents/skills/wayfinder/` when the effort outgrows one session |
 | `build` | [`../../.cursor/skills/implement-feature/`](../../.cursor/skills/implement-feature/) | `../../.agents/skills/implement/`, `../../.agents/skills/tdd/`, `../../.agents/skills/codebase-design/` |
 | `checks` | The commands in [`../../AGENTS.md`](../../AGENTS.md) | `../../.agents/skills/tdd/` |
 | `review` | [`../../.cursor/skills/review-change/`](../../.cursor/skills/review-change/), [`../../.cursor/skills/review-architecture/`](../../.cursor/skills/review-architecture/) | `../../.agents/skills/code-review/` — Standards and Spec axes |
