@@ -1,0 +1,87 @@
+# Project lint, typecheck and tests — the delivery gate.
+#
+# THIS IS THE WORKFLOW YOU MAKE A REQUIRED STATUS CHECK. It has no path filter,
+# so it runs on every pull request and every push to the default branch, and it
+# therefore reports a real result rather than the free success GitHub gives a
+# skipped job. See docs/agents/github-gates.md for the branch protection
+# settings that turn these jobs into `M:gate-ci`.
+#
+# ---------------------------------------------------------------------------
+# THE COMMANDS BELOW ARE PLACEHOLDERS. FILL THEM IN FROM AGENTS.md.
+#
+# AGENTS.md, "Before finishing", is the home for the commands this repository
+# runs before a change is handed over. This file mirrors that block so CI runs
+# the same commands the builder ran locally. Copy them here, delete the
+# matching placeholder step, and keep the two in sync: the day they disagree,
+# `M:gate-checks` (local) and `M:gate-ci` (here) stop being the same gate and
+# nobody finds out until a merge breaks the default branch.
+#
+# The failure mode this comment exists to prevent: a required check that runs
+# nothing. It is a green tick with no evidence behind it, and it is more
+# dangerous than no check at all, because a reviewer trusts it.
+# ---------------------------------------------------------------------------
+
+name: delivery
+
+on:
+  push:
+    # Rename this if the default branch is not `main`.
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # - uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '22'
+      #     cache: npm
+      # - run: npm ci
+      # - run: npm run lint
+
+      - name: No lint command configured
+        run: |
+          echo "::warning title=delivery.yml::The lint job runs nothing. Copy the lint command from AGENTS.md into .github/workflows/delivery.yml and delete this step."
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # - uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '22'
+      #     cache: npm
+      # - run: npm ci
+      # - run: npm run typecheck
+
+      - name: No typecheck command configured
+        run: |
+          echo "::warning title=delivery.yml::The typecheck job runs nothing. Copy the typecheck command from AGENTS.md into .github/workflows/delivery.yml and delete this step."
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # - uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '22'
+      #     cache: npm
+      # - run: npm ci
+      # - run: npm test
+
+      # memory.yml cannot be a required check, because it is path-filtered.
+      # Uncomment the next line to make memory consistency part of the gate
+      # that actually blocks a merge.
+      # - run: ./scripts/check-memory.sh
+
+      - name: No test command configured
+        run: |
+          echo "::warning title=delivery.yml::The test job runs nothing. Copy the test command from AGENTS.md into .github/workflows/delivery.yml and delete this step."

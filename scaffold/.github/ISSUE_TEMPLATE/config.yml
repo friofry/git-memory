@@ -1,0 +1,17 @@
+# Blank issues are disabled so every request arrives through a form that asks
+# for the evidence `M:gate-request` needs. A free-text issue that says "auth is
+# broken" cannot be triaged into a spec, a ticket or a spike without another
+# round trip, and it is that round trip the forms exist to remove.
+#
+# Replace OWNER/REPO below with this repository's path. A contact link needs an
+# absolute URL; GitHub does not resolve a repo-relative path here.
+
+blank_issues_enabled: false
+
+contact_links:
+  - name: How work moves through this repository
+    url: https://github.com/OWNER/REPO/blob/main/docs/agents/delivery-workflow.md
+    about: >-
+      The twelve delivery stages, the gate on each transition, and what evidence
+      each one leaves in the repository. Read this before opening an issue that
+      is really a question about process.

@@ -1,0 +1,84 @@
+name: Research spike
+description: Ask a timeboxed question whose answer unblocks a decision.
+title: "spike: "
+labels: ["research"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A spike answers one question and ships nothing. Its code is throwaway by
+        definition — see the spike rules in `docs/agents/issue-tracker.md`. If
+        you already know the answer and want it built, this is a feature
+        request, not a spike.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: The question
+      description: >-
+        One question, phrased so that an answer can be right or wrong. "Look
+        into signing" is a topic; "can a consumer verify a signature without a
+        network call at delivery time?" is a question.
+      placeholder: >-
+        Can a consumer verify an envelope signature without a network call at
+        delivery time?
+    validations:
+      required: true
+
+  - type: textarea
+    id: uncertainty
+    attributes:
+      label: Why it is uncertain
+      description: >-
+        What you already looked at and why it did not settle the matter. This is
+        what stops the spike from re-reading the documentation someone read last
+        week.
+      placeholder: >-
+        The library documents an offline verify path but not how the key gets to
+        the consumer, and our deployment has no mechanism for shipping one.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: timebox
+    attributes:
+      label: Timebox
+      description: >-
+        The spike stops here whether or not it has an answer, and "no answer
+        yet, here is what was ruled out" is a valid result. A spike with no
+        timebox becomes an implementation nobody reviewed.
+      options:
+        - Half a day
+        - One day
+        - Two days
+        - One week — needs a named reason in the body
+    validations:
+      required: true
+
+  - type: textarea
+    id: good-answer
+    attributes:
+      label: What a good answer looks like
+      description: >-
+        The shape of the evidence that would end the question: a benchmark
+        number, a working call, a documented limit, a failing attempt with the
+        error. Write this before the work starts, or the spike ends when someone
+        gets bored.
+      placeholder: >-
+        A script under spikes/auth-envelope/proto-a/ that verifies a signature
+        with no network access, plus the measured cost per envelope.
+    validations:
+      required: true
+
+  - type: input
+    id: unblocks
+    attributes:
+      label: What decision this unblocks
+      description: >-
+        The decision waiting on the answer, by address where one exists —
+        a feature (`F:007-auth-envelope`), a ticket (`T:007/03`) or an ADR under
+        `docs/adr/`. A spike that unblocks nothing is curiosity; do it on your
+        own time.
+      placeholder: F:007-auth-envelope — whether the envelope carries a key id at all
+    validations:
+      required: true

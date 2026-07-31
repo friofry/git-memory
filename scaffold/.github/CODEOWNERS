@@ -1,0 +1,48 @@
+# Code owners for the memory layer.
+#
+# HOW TO FILL THIS IN
+#
+# 1. Replace @your-org/memory-owners below with a real GitHub team
+#    (@org/team-slug) or one or more users (@octocat). The team must have write
+#    access to this repository, or GitHub ignores the rule silently and never
+#    tells you.
+# 2. Commit this file on the default branch. A CODEOWNERS file on a topic
+#    branch has no effect on that branch's own pull request.
+# 3. Turn on branch protection for the default branch and tick "Require review
+#    from Code Owners". Until you do, this file only adds reviewers as a
+#    suggestion — it blocks nothing.
+#
+# THAT LAST STEP IS THE WHOLE POINT. CODEOWNERS on its own is a routing hint:
+# it requests a review, and the pull request merges without it. It becomes a
+# gate only when branch protection requires code owner review, and only for
+# branches that protection covers. Ownership recorded here and not enforced
+# there is a control that everyone believes in and nobody has.
+#
+# Syntax: last matching pattern wins, so put the broadest rule first and the
+# specific override last. A leading slash anchors to the repository root; a
+# trailing slash matches a directory and everything under it. Comment lines and
+# blank lines are ignored.
+#
+# What each rule below protects, and which gate it serves, is in
+# docs/agents/github-gates.md.
+
+# The method layer: how work is typed, addressed, gated and handed over. A
+# change here changes how every future feature is run.
+/docs/method/            @your-org/memory-owners
+
+# The memory map and the one-home rule the whole scaffold rests on.
+/docs/memory.md          @your-org/memory-owners
+
+# Delivery stages, tracker rules, triage labels, vendored-skill bindings.
+/docs/agents/            @your-org/memory-owners
+
+# The checker that enforces all of the above.
+/scripts/check-memory.sh @your-org/memory-owners
+
+# The empty forms every node file is created from.
+/templates/             @your-org/memory-owners
+
+# Uncomment to put the CI and intake machinery under the same review. Worth
+# doing once someone has changed a workflow and quietly weakened a required
+# check.
+# /.github/              @your-org/memory-owners

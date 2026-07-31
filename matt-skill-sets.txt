@@ -1,12 +1,43 @@
 # Matt Pocock skill sets
 
-Lists consumed by `/setup-git-memory`. Install with repeated `-s` flags and `-a universal`:
+Lists consumed by `/setup-git-memory` and by scripts/package-claude-web-skills.sh.
+Install with repeated `-s` flags and `-a universal`:
 
 ```bash
 npx skills@latest add mattpocock/skills -s research -s tdd -a universal -y
 ```
 
-Do **not** vendor `setup-matt-pocock-skills` — its output is what this scaffold already wrote under `docs/agents/`.
+Do **not** vendor `setup-matt-pocock-skills` — its output is what this scaffold
+already wrote under `docs/agents/`.
+
+## Choosing a set
+
+Take `full` unless the target repository is small enough that a shorter skill list
+is the point. `minimal` covers the stages a feature cannot skip — research, spec,
+plan, build, checks, review — and drops the eight skills that serve stages you
+reach less often:
+
+- `wayfinder`, `triage` — needed once an effort outgrows one session's ticket queue.
+- `prototype`, `diagnosing-bugs` — a timeboxed spike, and a hard bug at `rework`.
+- `resolving-merge-conflicts`, `handoff` — a conflicted merge, and a session ending
+  mid-stage.
+- `improve-codebase-architecture` — a periodic scan whose output enters as a new
+  `request`.
+- `writing-great-skills` — only when editing a skill under `.cursor/skills/`.
+
+Adding one later is a single `npx skills@latest add … -a universal -y` followed by
+`./scripts/check-memory.sh --fix` to re-pin the vendored bytes.
+
+Which skill runs at which delivery stage, and which repo-authored skill is the entry
+point that drives it, is one table with one home:
+scaffold/docs/agents/delivery-workflow.md, "Which skill performs which stage". Read
+it there — a second copy in this file would drift the first time a stage's entry
+point changes. The adapter layer underneath it (what each upstream skill assumes,
+and what this repository answers instead) is
+scaffold/docs/agents/vendored-skills.md.
+
+This file lists vendored skills only. The repo-authored skills under
+`.cursor/skills/` are copied from `scaffold/`, not installed through the CLI.
 
 ## minimal
 

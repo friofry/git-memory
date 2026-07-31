@@ -1,0 +1,92 @@
+name: Bug report
+description: Report behaviour that contradicts what the repository says should happen.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A bug is a gap between intended and actual behaviour, so this form asks
+        you to state both. If nothing in the repository says what the intended
+        behaviour is, you are asking for a feature — use the feature request
+        form instead.
+
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Symptom
+      description: >-
+        What goes wrong, in the words of whoever noticed. Paste the error, the
+        wrong value or the timing, not your theory about the cause.
+      placeholder: >-
+        A consumer rejects every envelope published since Tuesday with
+        "signature verification failed", including envelopes it published itself.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: >-
+        The shortest sequence that produces the symptom, as numbered steps a
+        stranger could follow. If it only reproduces sometimes, say how often
+        out of how many attempts — a rate is debuggable, "intermittently" is
+        not.
+      placeholder: |
+        1. Publish an event with `bin/publish --topic orders fixtures/order.json`
+        2. Run the consumer against the same topic
+        3. Observe the rejection on the first delivery, every time
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-observed
+    attributes:
+      label: Expected versus observed
+      description: >-
+        Two lines. Expected is what the spec, ADR, acceptance file or glossary
+        entry says should happen — cite it. Observed is what happened instead.
+      placeholder: |
+        Expected: verification succeeds for any envelope this publisher signed
+        (specs/007-auth-envelope/acceptance.md, scenario 3).
+        Observed: verification fails with "signature verification failed".
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Where it was observed
+      description: >-
+        Environment, branch or tag, and the commit if you have it. A bug report
+        without a version is a bug report nobody can bisect.
+      placeholder: staging, main at 3e77b41, since the 12:40 deploy
+    validations:
+      required: true
+
+  - type: dropdown
+    id: failing-check
+    attributes:
+      label: Is there a failing check?
+      description: >-
+        A test, a lint rule or a CI job that already goes red on this. A bug
+        with a red check is a fix; a bug without one needs a feedback loop built
+        first, and that is the first thing the work will do.
+      options:
+        - "Yes — a check already fails; the command is in the next field"
+        - "No — nothing in CI notices this yet"
+        - "Unknown — I have not run the checks"
+    validations:
+      required: true
+
+  - type: input
+    id: failing-check-command
+    attributes:
+      label: The failing command
+      description: >-
+        Leave empty if there is none. Paste the command, not the job name, so it
+        can be run locally.
+      placeholder: npm test -- src/events/verify.test.ts
+    validations:
+      required: false

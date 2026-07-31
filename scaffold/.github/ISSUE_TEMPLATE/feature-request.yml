@@ -1,0 +1,98 @@
+name: Feature request
+description: Ask for an outcome that does not exist yet.
+title: "feature: "
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form closes `M:gate-request` — the gate that blocks the move into
+        `research` or `spec`. What you write in Outcome is copied verbatim into
+        `specs/<NN>-<slug>/spec.md`, so the wording is the thing being gated,
+        not a summary of it. See `docs/method/gates.md`.
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome, in one sentence
+      description: >-
+        What becomes true for someone once this ships. Name the person and the
+        change in their situation. A solution stated as an outcome is rejected
+        here and sent back: "add a signature field to the event envelope" names
+        an edit, and "a service that receives an event can verify who sent it
+        without calling the auth service" names the outcome that edit is one way
+        to reach. If your sentence contains a module name, a library name or a
+        verb like add/refactor/migrate, it is a solution — rewrite it.
+      placeholder: >-
+        A service that receives an event can verify who sent it without calling
+        the auth service.
+    validations:
+      required: true
+
+  - type: input
+    id: audience
+    attributes:
+      label: Who it is for
+      description: >-
+        The role that feels the difference. "Everyone" means nobody; it is the
+        answer that produces a feature with no acceptance scenario.
+      placeholder: Owners of a service that consumes events it did not publish.
+    validations:
+      required: true
+
+  - type: textarea
+    id: in-scope
+    attributes:
+      label: In scope
+      description: >-
+        What this request covers, as bullets. Each line should be something a
+        Given/When/Then scenario could be written against.
+      placeholder: |
+        - Envelope carries the publisher identity and a signature
+        - Consumers can verify a signature offline
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: >-
+        What a reasonable reader would assume is included and is not. This field
+        is where the argument in review gets avoided; leave it empty and the
+        scope is decided by whoever writes the first commit.
+      placeholder: |
+        - Key rotation policy — separate request
+        - Replaying already-published events
+    validations:
+      required: true
+
+  - type: dropdown
+    id: work-type
+    attributes:
+      label: Work type
+      description: >-
+        Becomes the `Type:` line on the spec. Only these three are legal on a
+        spec; the eleven values and where each is legal are in
+        `docs/method/work-types.md`. A research question or a throwaway
+        prototype is not a feature — use the research spike form.
+      options:
+        - feature — deliver a new user-visible outcome
+        - bug — restore intended behaviour
+        - architecture — decide or change a boundary, seam or dependency direction
+    validations:
+      required: true
+
+  - type: textarea
+    id: unknowns
+    attributes:
+      label: Known unknowns
+      description: >-
+        What you do not know yet and who might. Each entry becomes a research
+        ticket or a spike rather than an assumption someone discovers at build
+        time.
+      placeholder: |
+        - Whether consumers can hold a public key without a new deployment step
+        - Whether the current envelope has room for a signature field
+    validations:
+      required: false

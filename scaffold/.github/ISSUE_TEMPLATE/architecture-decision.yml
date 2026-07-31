@@ -1,0 +1,86 @@
+name: Architecture decision
+description: Propose a decision about a boundary, a seam or a dependency direction.
+title: "decision: "
+labels: ["architecture"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is the intake for a decision, not the decision itself. When it
+        is made, the record goes to an ADR under `docs/adr/` and this issue
+        closes with the ADR number — the one-home rule in `docs/memory.md`.
+        Reversible choices that only affect one feature belong in that feature's
+        `decisions.md` instead.
+
+  - type: textarea
+    id: decision
+    attributes:
+      label: The decision
+      description: >-
+        One sentence in the form "we will X". Not "we should consider X", not a
+        list of options — the alternatives go in the next field. If you cannot
+        write the sentence, the decision is not ready and what you have is a
+        research spike.
+      placeholder: >-
+        We will carry the publisher key id in the envelope header and resolve it
+        per call, rather than pinning one key per consumer.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: >-
+        At least two, each with the reason it loses. An alternative recorded
+        without its reason gets re-proposed every six months by someone who was
+        not in the room, and nothing in the repository can answer them.
+      placeholder: |
+        - One key per consumer, pinned at deploy: fails on rotation without a
+          redeploy of every consumer.
+        - Verify by calling the auth service: reintroduces the network hop the
+          feature exists to remove.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reversibility
+    attributes:
+      label: How reversible is it
+      description: >-
+        Reversibility decides how much scrutiny this needs before it lands, and
+        whether it is an ADR at all. Cheap-to-reverse choices should be made
+        quickly and written down briefly.
+      options:
+        - Reversible in a day — no persisted data or public contract moves
+        - Reversible with a migration — persisted data changes shape
+        - Effectively permanent — a published contract or an external consumer depends on it
+    validations:
+      required: true
+
+  - type: textarea
+    id: constrains
+    attributes:
+      label: What it constrains afterwards
+      description: >-
+        What becomes harder, forbidden or mandatory once this lands. This is the
+        text a future reader needs most: it is how they discover they are about
+        to violate a decision nobody remembers making.
+      placeholder: >-
+        Every publisher must have a resolvable key id before it may publish, so
+        the onboarding path for a new service gains a required step. Consumers
+        may no longer assume one key per topic.
+    validations:
+      required: true
+
+  - type: input
+    id: affected
+    attributes:
+      label: What it touches
+      description: >-
+        Modules, features or ADRs affected, by address where one exists —
+        `F:007-auth-envelope`, `ADR:0012`, a path under `docs/architecture/`. An
+        ADR this supersedes must be named here.
+      placeholder: F:007-auth-envelope, ADR:0012 (supersedes), docs/architecture/events.md
+    validations:
+      required: false
