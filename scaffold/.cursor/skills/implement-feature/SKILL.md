@@ -12,6 +12,11 @@ what changed.
 Use when `specs/<NN>-<slug>/` exists, `M:gate-approval` is closed, and tickets are
 ready for agent work.
 
+Every `T:` and `M:` string below is an address, not a nickname: `T:007/03` is one
+ticket file, `M:gate-approval` one heading under `docs/method/`. Resolve either with
+`./scripts/git-memory-resolve.sh resolve <address>` —
+[`../../../docs/method/addressing.md`](../../../docs/method/addressing.md).
+
 ## 1. Assemble the packet first
 
 Do not start by reading the feature. Start by assembling the envelope for this node
@@ -40,7 +45,11 @@ contract inside a build turn.
    work starts —
    [`../../../docs/agents/delivery-workflow.md`](../../../docs/agents/delivery-workflow.md).
 2. **Check `Blocked by:` before claiming.** A ticket is unblocked only when every
-   address on that line is `resolved` or `done`. Resolve each one:
+   address on that line carries a finished triage label — `resolved` for a question
+   answered under `## Answer`, `done` for implementation that has landed. Any other
+   label blocks; the full set is in
+   [`../../../docs/agents/triage-labels.md`](../../../docs/agents/triage-labels.md).
+   Resolve each address:
 
    ```bash
    ./scripts/git-memory-resolve.sh resolve T:007/01
@@ -48,21 +57,22 @@ contract inside a build turn.
 
    An unresolvable blocker is a stop, not a formality — it usually means the
    blocking ticket was renumbered and the two files now disagree about what is
-   waiting on what. A blocker left behind after its ticket resolved is the opposite
-   failure, and it is why a frontier looks empty while work is sitting there:
-   delete the line when nothing blocks the ticket.
+   waiting on what. A `Blocked by:` line left in place after the ticket it names
+   reached `done` or `resolved` is the opposite failure, and it is why a frontier
+   looks empty while work is sitting there: delete the line when nothing blocks the
+   ticket.
 3. **Claim by address.** Set `Status: claimed` on the ticket file and say which
    address you took — `T:007/03`, not "the schema ticket". Two agents claiming
    different files under the same description is a merge conflict discovered at
-   review. Label vocabulary:
-   [`../../../docs/agents/triage-labels.md`](../../../docs/agents/triage-labels.md).
+   review.
 
 Never add a `Stage:` line to a ticket to record how far it got. Stage belongs to the
 feature, in one file.
 
 ## 3. Build the slice
 
-The ticket's `Type:` decides the body it follows and therefore what "done" means.
+The ticket's `Type:` decides the body it follows and therefore what finishing it
+requires.
 `Type: implementation` follows `M:ticket-implementation` —
 [`../../../docs/method/boilerplates/ticket-implementation.md`](../../../docs/method/boilerplates/ticket-implementation.md)
 — which names the scenario advanced, the seam, and the files that may change. The
@@ -82,13 +92,20 @@ address on the ticket's `Refs:` line; do not paste the skeleton's prose.
 
 ## 4. Prove it and hand off
 
-1. Run the applicable commands from `AGENTS.md`. That is the `checks` stage — set
-   `Stage: checks` while running them, and paste the exact commands and their output
-   into the pull request body. That output is the evidence `M:gate-checks` demands —
-   [`../../../docs/method/gates.md`](../../../docs/method/gates.md).
+1. Run every command in the **Before finishing** block of
+   [`../../../AGENTS.md`](../../../AGENTS.md) — `./scripts/check-memory.sh` plus each
+   project command that repository filled in — and no substitutes of your own. A
+   command still commented out there is unfinished setup, not a command to skip: name
+   the missing check in the pull request body. That is the `checks` stage — set
+   `Stage: checks` while running them, and paste the exact commands and their
+   unedited output into the pull request body, which is the evidence `M:gate-checks`
+   demands — [`../../../docs/method/gates.md`](../../../docs/method/gates.md).
 2. Append implementation choices to `decisions.md`; promote one to an ADR under
    `docs/adr/` when it outlives this feature.
-3. Fill the ticket's `## Answer` and set `Status: resolved`, in the same commit.
+3. Set the ticket's finished label in the same commit as the code it describes:
+   `done` when the work landed, `resolved` when the ticket asked a question and the
+   answer now sits under its `## Answer` heading. A ticket left `claimed` after its
+   diff merges is why the next agent re-claims work that is already done.
 4. Hand off with `Stage: review`. A returning finding moves the feature to `rework`,
    never straight back to `build`.
 
@@ -111,7 +128,7 @@ hard-to-reverse decision, `decisions.md` for a local choice
 
 - Scoped commits or a pull request whose body carries the commands and their output.
 - Green targeted tests for every scenario the slice claims.
-- `decisions.md` updated and the ticket's `## Answer` filled.
+- `decisions.md` updated and the ticket closed at `done` or `resolved`.
 - `./scripts/check-memory.sh` green.
 
 ## Stop and escalate when

@@ -13,7 +13,7 @@ You are looking for defects, not fixing them. A pass that fixes what it finds
 produces a review record of problems nobody independently caught, and the next
 person tunes the process against a number that is fiction —
 [`../../../docs/method/work-types.md`](../../../docs/method/work-types.md),
-`review` versus `rework`.
+`Type: review` versus `Type: rework`.
 
 ## Inputs
 
@@ -36,21 +36,23 @@ person tunes the process against a number that is fiction —
 
 ## Procedure
 
-1. Assemble the `review` packet —
-   [`../prepare-packet/SKILL.md`](../prepare-packet/SKILL.md). It is the widest
-   profile in the set on purpose: a review runs two axes and each needs a different
-   half, so it carries the diff, `acceptance.md`, `rules/`, the architecture
-   documents and `CONTEXT.md`.
+1. Assemble the packet for the `review` stage —
+   [`../prepare-packet/SKILL.md`](../prepare-packet/SKILL.md). Its layers, and the
+   files each layer carries, are fixed by `M:packet-review` in
+   [`../../../docs/method/packet-profiles.md`](../../../docs/method/packet-profiles.md).
+   Carry the whole profile; a layer you drop is an axis nobody checks.
 
    ```bash
    ./scripts/git-memory-packet.sh F:007-auth-envelope review
    ```
 
-2. Read the diff against [`../../../rules/`](../../../rules/) and the architecture
-   documents under [`../../../docs/architecture/`](../../../docs/architecture/). For
-   a full two-axis pass run `.agents/skills/code-review/`: its Standards axis reads
-   `rules/`, the architecture documents, `CONTEXT.md` and `AGENTS.md`, and its Spec
-   axis reads the feature's `acceptance.md`.
+2. Run the two-axis pass with `.agents/skills/code-review/`. Standards asks whether
+   the diff obeys the rules this repo has written down; Spec asks whether it does
+   what the scenarios say. Which files feed which axis is mapped once, in
+   [`../../../docs/agents/vendored-skills.md`](../../../docs/agents/vendored-skills.md).
+   Where that skill is not installed, read the diff yourself against
+   [`../../../rules/`](../../../rules/) and
+   [`../../../docs/architecture/`](../../../docs/architecture/).
 3. Check the glossary: no `_Avoid_` synonyms in new prose or new identifiers; a new
    term is either unnecessary or already added to `CONTEXT.md`.
 4. Confirm a test exists for every behaviour change and every bug fix, and that it
