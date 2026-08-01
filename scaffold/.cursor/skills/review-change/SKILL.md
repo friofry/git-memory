@@ -43,7 +43,7 @@ person tunes the process against a number that is fiction —
    Carry the whole profile; a layer you drop is an axis nobody checks.
 
    ```bash
-   ./scripts/git-memory-packet.sh F:007-auth-envelope review
+   ./.git-memory-scripts/git-memory-packet.sh F:007-auth-envelope review
    ```
 
 2. Run the two-axis pass with `.agents/skills/code-review/`. Standards asks whether
@@ -88,7 +88,7 @@ enter `ci` without it —
 [`../../../templates/review.md`](../../../templates/review.md); that file is the
 home for the shape. A review that exists only as pull request comments cannot be
 read by the next agent and cannot be checked by
-`./scripts/check-memory.sh --strict`.
+`./.git-memory-scripts/check-memory.sh --strict`.
 
 Then move `Stage:`:
 

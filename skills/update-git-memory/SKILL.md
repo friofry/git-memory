@@ -12,7 +12,7 @@ confirmation-driven update, not a blind scaffold overwrite.
 ## Preconditions
 
 - Run from the root of a project that already contains `docs/memory.md` and
-  `scripts/check-memory.sh`.
+  `.git-memory-scripts/check-memory.sh`.
 - Use `https://github.com/friofry/git-memory.git` unless the user explicitly
   supplies another git-memory remote or local clone.
 - Do not run Matt's `/setup-matt-pocock-skills`.
@@ -25,18 +25,19 @@ A v1 install has the memory map, the 12 stages, the repo-authored skills and
 `check-memory.sh`. v2 adds the method layer, addressing, packets, gates, three new
 scripts and the GitHub layer. The migration is additive with **one** rename.
 
-Detect v1: `docs/method/` is absent, or `scripts/git-memory-resolve.sh` is.
+Detect v1: `docs/method/` is absent, or `.git-memory-scripts/git-memory-resolve.sh` is.
 
 ### New — safe to add whole, nothing in the target can conflict
 
 | Path | What it is |
 |------|------------|
-| `scripts/lib/git-memory-lib.sh` | **Copy this first.** The only node-header reader. Every script sources it and exits 2 when it is missing, so a migration that takes `check-memory.sh` without it leaves a repository where nothing runs |
+| `.git-memory-scripts/lib/git-memory-lib.sh` | **Copy this first.** The only node-header reader. Every script sources it and exits 2 when it is missing, so a migration that takes `check-memory.sh` without it leaves a repository where nothing runs |
 | `docs/method/` and `docs/method/boilerplates/` | Method truth: work types, addressing, gates, packet profiles, ticket and review skeletons |
-| `scripts/git-memory-resolve.sh` | The only address parser in the system |
-| `scripts/git-memory-graph.sh` | The work graph, printed to stdout |
-| `scripts/git-memory-packet.sh` | The per-stage context envelope, printed to stdout |
-| `scripts/test/run-tests.sh` | Fixture-based harness for all four scripts |
+| `.git-memory-scripts/git-memory-resolve.sh` | The only address parser in the system |
+| `.git-memory-scripts/git-memory-graph.sh` | The work graph, printed to stdout |
+| `.git-memory-scripts/git-memory-packet.sh` | The per-stage context envelope, printed to stdout |
+| `.git-memory-scripts/git-memory-progress.sh` | The twelve stages as a checklist filled from evidence, and `--cheatsheet` |
+| `.git-memory-scripts/test/run-tests.sh` | Fixture-based harness for every script above |
 | `.cursor/skills/prepare-packet/` | Assembles the packet before a long turn |
 | `.cursor/skills/plan-feature/` | Cuts an approved feature into tickets against its acceptance scenarios. Replaces upstream `/to-tickets` as the `plan` entry point |
 | `CLAUDE.md` and `.claude/skills` | Claude Code support. `CLAUDE.md` is a pointer to `AGENTS.md` and carries no commands of its own; `.claude/skills` is a **symbolic link** to `.cursor/skills`, not a copy. Create it with `ln -sfn ../.cursor/skills .claude/skills`, and skip both if the project has no Claude Code users |
@@ -64,7 +65,7 @@ nothing.
 
 | Path | What changed |
 |------|--------------|
-| `scripts/check-memory.sh` | New checks, and a `--strict` flag. Take the upstream file whole unless the target edited it |
+| `.git-memory-scripts/check-memory.sh` | New checks, and a `--strict` flag. Take the upstream file whole unless the target edited it |
 | `docs/memory.md` | Node headers, the method layer, projections, the `active-context.md` rule |
 | `docs/agents/delivery-workflow.md` | Gate rows on the transitions; the Type-is-not-Stage section |
 | `docs/agents/vendored-skills.md` | The `/wayfinder` type mapping and the packet binding |
@@ -131,7 +132,7 @@ Pay particular attention to:
 - `docs/agents/`, `docs/memory.md`, and `AGENTS.md`;
 - `docs/method/` — absent on a v1 install, and the largest single addition;
 - `templates/`;
-- `scripts/`, all four scripts and `scripts/test/`;
+- `.git-memory-scripts/`, every `git-memory-*.sh`, `.git-memory-scripts/lib/` and `.git-memory-scripts/test/`;
 - `.github/workflows/`, `.github/ISSUE_TEMPLATE/`, `.github/CODEOWNERS`.
 
 Never treat `CONTEXT.md`, `active-context.md`, feature specs, ADRs, domain docs,
@@ -155,8 +156,8 @@ to a repository-wide `cp`, `rsync --delete`, or force checkout.
 
 Copy confirmed missing files with their upstream bytes and modes. For an
 existing differing file, first show the relevant diff, then make only the merge
-the user confirmed. New scripts need their executable bit: `chmod +x scripts/*.sh
-scripts/test/*.sh`.
+the user confirmed. New scripts need their executable bit: `chmod +x .git-memory-scripts/*.sh
+.git-memory-scripts/test/*.sh`.
 
 The update must never:
 
@@ -181,14 +182,14 @@ npx skills@latest update
 Run, in this order:
 
 ```bash
-test -r scripts/lib/git-memory-lib.sh || echo 'MISSING: scripts/lib/git-memory-lib.sh'
-chmod +x scripts/*.sh scripts/test/*.sh
-./scripts/test/run-tests.sh
-./scripts/check-memory.sh --fix
+test -r .git-memory-scripts/lib/git-memory-lib.sh || echo 'MISSING: .git-memory-scripts/lib/git-memory-lib.sh'
+chmod +x .git-memory-scripts/*.sh .git-memory-scripts/test/*.sh
+./.git-memory-scripts/test/run-tests.sh
+./.git-memory-scripts/check-memory.sh --fix
 ```
 
 The first line is not ceremony. Every script sources that library and exits 2
-without it, so a migration that copied the scripts but not `scripts/lib/` fails
+without it, so a migration that copied the scripts but not `.git-memory-scripts/lib/` fails
 on all four at once — and "exit 2, missing library" reads nothing like "your
 memory is inconsistent". Check it before blaming the repository.
 
@@ -197,7 +198,7 @@ of them is trusted; it uses throwaway fixtures under `mktemp -d` and writes noth
 into the project. Then run any additional documentation checks required by
 `AGENTS.md`.
 
-Run `./scripts/check-memory.sh --strict` once and show the output as a report. Its
+Run `./.git-memory-scripts/check-memory.sh --strict` once and show the output as a report. Its
 warnings on a v1 repository are the backfill list from the migration section, not
 work to do now.
 

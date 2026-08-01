@@ -3,7 +3,7 @@
 !.scratch/**
 .scratch/**/node_modules/
 
-# Generated projections — the work graph, packets, anything scripts/ redirects
+# Generated projections — the work graph, packets, anything .git-memory-scripts/ redirects
 # here. Never committed: a projection is recomputed from the node headers on every
 # read, so a committed copy can only ever be a second, staler answer.
 build/

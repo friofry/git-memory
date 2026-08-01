@@ -20,6 +20,6 @@ the one it supersedes, and the original stays readable as the reasoning someone
 actually had at the time.
 
 Do not markdown-link into specs/ or .scratch/ — an ADR is a stable layer and
-scripts/check-memory.sh rejects links down into volatile ones. Naming a spec in
+.git-memory-scripts/check-memory.sh rejects links down into volatile ones. Naming a spec in
 prose or backticks is fine.
 -->

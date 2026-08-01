@@ -67,7 +67,7 @@ in [`../../../docs/memory.md`](../../../docs/memory.md), "Node headers"; do not
 restate them in the spec.
 
 `Stage:` belongs here and nowhere else. A ticket or spike carrying one is a hard
-failure in `./scripts/check-memory.sh`.
+failure in `./.git-memory-scripts/check-memory.sh`.
 
 ## 4. Fill the four files
 
@@ -110,7 +110,7 @@ put them in front of a human in the `M:approval-checklist` shape —
 [`../../../docs/method/boilerplates/approval-checklist.md`](../../../docs/method/boilerplates/approval-checklist.md).
 
 ```bash
-./scripts/git-memory-packet.sh F:007-auth-envelope approval
+./.git-memory-scripts/git-memory-packet.sh F:007-auth-envelope approval
 ```
 
 That profile quotes the four files in full on purpose: a human who approves a summary
@@ -124,7 +124,7 @@ and you may not open `Stage: plan` — `M:gate-approval` in
 - `specs/<NN>-<slug>/` with all four files, and `ID:` / `Type:` / `Status:` /
   `Stage:` / `Parent:` on `spec.md`.
 - Optional `.scratch/<slug>/` tickets, each with its own header.
-- `./scripts/check-memory.sh` green, and `--strict` green on the new files.
+- `./.git-memory-scripts/check-memory.sh` green, and `--strict` green on the new files.
 
 ## Stop and escalate when
 

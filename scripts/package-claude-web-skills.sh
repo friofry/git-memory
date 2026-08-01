@@ -205,15 +205,18 @@ if [[ ${#REPO_SKILL_SRCS[@]} -eq 0 ]]; then
 fi
 
 # setup-git-memory.zip carries scaffold/ inside it, and setup-git-memory's own
-# step 5 runs scripts/test/run-tests.sh from that copy. An embedded scaffold
-# missing the tool layer ships an installer that cannot prove itself, which is
-# discovered by the user rather than here.
+# step 5 runs the harness from that copy. An embedded scaffold missing the tool
+# layer ships an installer that cannot prove itself, which is discovered by the
+# user rather than here. This list is why the scripts/ -> .git-memory-scripts/
+# rename failed loudly instead of shipping a broken archive.
 for _scaffold_file in \
-  scripts/check-memory.sh \
-  scripts/git-memory-resolve.sh \
-  scripts/git-memory-graph.sh \
-  scripts/git-memory-packet.sh \
-  scripts/test/run-tests.sh
+  .git-memory-scripts/check-memory.sh \
+  .git-memory-scripts/git-memory-resolve.sh \
+  .git-memory-scripts/git-memory-graph.sh \
+  .git-memory-scripts/git-memory-packet.sh \
+  .git-memory-scripts/git-memory-progress.sh \
+  .git-memory-scripts/lib/git-memory-lib.sh \
+  .git-memory-scripts/test/run-tests.sh
 do
   [[ -f "${ROOT}/scaffold/${_scaffold_file}" ]] \
     || die "scaffold/${_scaffold_file} is missing; setup-git-memory.zip would embed a scaffold whose tool layer cannot run"

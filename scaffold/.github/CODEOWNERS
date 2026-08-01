@@ -37,7 +37,7 @@
 /docs/agents/            @your-org/memory-owners
 
 # The checker that enforces all of the above.
-/scripts/check-memory.sh @your-org/memory-owners
+/.git-memory-scripts/check-memory.sh @your-org/memory-owners
 
 # The empty forms every node file is created from.
 /templates/             @your-org/memory-owners

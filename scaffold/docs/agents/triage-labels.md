@@ -30,7 +30,7 @@ Status: resolved
 ```
 
 The bold form is what upstream `/to-tickets` writes; the plain form is older.
-Both are read the same way. `scripts/check-memory.sh` rejects any value outside
+Both are read the same way. `.git-memory-scripts/check-memory.sh` rejects any value outside
 the two tables above, so a fourth vocabulary shows up as a failing check rather
 than as drift.
 
@@ -47,7 +47,7 @@ mixing them is the most common header error.
 
 A spec therefore carries no triage label, and a ticket carries no feature status.
 `Status: ready-for-agent` on a spec and `Status: active` on a ticket are both
-rejected by `scripts/check-memory.sh` — each value is checked against the
+rejected by `.git-memory-scripts/check-memory.sh` — each value is checked against the
 vocabulary its node kind is allowed to use, not against the union of the two.
 
 Feature progress has a second, finer line that only a spec carries: `Stage:`. A

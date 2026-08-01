@@ -49,7 +49,7 @@ version that contradicts the method three features from now.
 | `review` | `M:ticket-review` |
 
 All five are declared under `docs/method/boilerplates/`; resolve one with
-`./scripts/git-memory-resolve.sh resolve M:ticket-interface`.
+`./.git-memory-scripts/git-memory-resolve.sh resolve M:ticket-interface`.
 
 Three types carry an obligation the shared shape does not state:
 

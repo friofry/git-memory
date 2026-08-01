@@ -2,21 +2,21 @@
 #
 # The stage-aware context envelope (see docs/method/packet-profiles.md).
 #
-#   scripts/git-memory-packet.sh F:007-auth-envelope build    print the build packet
-#   scripts/git-memory-packet.sh T:007/03                     stage read from the spec
-#   scripts/git-memory-packet.sh F:007-auth-envelope review --format json
-#   scripts/git-memory-packet.sh T:007/03 build --budget 8000
-#   scripts/git-memory-packet.sh --help                       usage, exit 0
+#   .git-memory-scripts/git-memory-packet.sh F:007-auth-envelope build    print the build packet
+#   .git-memory-scripts/git-memory-packet.sh T:007/03                     stage read from the spec
+#   .git-memory-scripts/git-memory-packet.sh F:007-auth-envelope review --format json
+#   .git-memory-scripts/git-memory-packet.sh T:007/03 build --budget 8000
+#   .git-memory-scripts/git-memory-packet.sh --help                       usage, exit 0
 #
 set -uo pipefail
 shopt -s nullglob
 
 cd "$(dirname "$0")/.." || exit 1
 
-if [ -r scripts/lib/git-memory-lib.sh ]; then
-  . scripts/lib/git-memory-lib.sh
+if [ -r .git-memory-scripts/lib/git-memory-lib.sh ]; then
+  . .git-memory-scripts/lib/git-memory-lib.sh
 else
-  printf '%s: missing scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
+  printf '%s: missing .git-memory-scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
   exit 2
 fi
 
@@ -29,7 +29,7 @@ tab=$(printf '\t')
 # One resolver: address to path is git-memory-resolve.sh and nothing else, here
 # included (docs/method/addressing.md, "One resolver"). Called through bash so a
 # checkout that lost the executable bit still works.
-resolver="scripts/git-memory-resolve.sh"
+resolver=".git-memory-scripts/git-memory-resolve.sh"
 
 format=md
 budget=""
@@ -101,7 +101,7 @@ EOF
 # docs/method/packet-profiles.md owns this table; this is its executable copy and
 # the doc wins on any disagreement.
 
-# The twelve stages live in scripts/lib/git-memory-lib.sh, once.
+# The twelve stages live in .git-memory-scripts/lib/git-memory-lib.sh, once.
 stage_is_known() { gm_stage_is_known "$1"; }
 
 # Prints the layers this stage carries; exit 1 for a stage with no profile.
@@ -221,7 +221,7 @@ resolve_node() {
   [ -f "$resolver" ] || die \
     "$resolver is missing" \
     "this script resolves every address through it and parses none itself" \
-    "install it beside this one, or run scripts/check-memory.sh to see what else the scaffold is missing"
+    "install it beside this one, or run .git-memory-scripts/check-memory.sh to see what else the scaffold is missing"
 
   node_path=$(bash "$resolver" resolve "$address") || die \
     "cannot assemble a packet for '$address': it does not resolve (the resolver's reason is above)" \
@@ -812,7 +812,7 @@ size_note="(measuring)"
 render_md() {
   local layer body note
   printf '# Packet — %s at stage %s\n\n' "$address" "$stage"
-  printf 'Profile M:packet-%s, from docs/method/packet-profiles.md. Assembled per turn by scripts/%s; nothing is written into the repository.\n\n' "$stage" "$self"
+  printf 'Profile M:packet-%s, from docs/method/packet-profiles.md. Assembled per turn by .git-memory-scripts/%s; nothing is written into the repository.\n\n' "$stage" "$self"
   printf -- '- Included layers: %s\n' "$(included_titles)"
   printf -- '- Omitted layers: %s\n' "$(omitted_titles)"
   printf -- '- Size: %s\n' "$size_note"

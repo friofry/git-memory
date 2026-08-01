@@ -32,7 +32,7 @@ fix it in [`../../../docs/method/packet-profiles.md`](../../../docs/method/packe
 1. **Resolve the address.**
 
    ```bash
-   ./scripts/git-memory-resolve.sh resolve T:007/03
+   ./.git-memory-scripts/git-memory-resolve.sh resolve T:007/03
    ```
 
    Exit 1 means the address names nothing. Stop and report it. A packet assembled
@@ -45,9 +45,9 @@ fix it in [`../../../docs/method/packet-profiles.md`](../../../docs/method/packe
 3. **Print the packet.**
 
    ```bash
-   ./scripts/git-memory-packet.sh F:007-auth-envelope build
-   ./scripts/git-memory-packet.sh T:007/03 build --budget 8000
-   ./scripts/git-memory-packet.sh F:007-auth-envelope review --format json
+   ./.git-memory-scripts/git-memory-packet.sh F:007-auth-envelope build
+   ./.git-memory-scripts/git-memory-packet.sh T:007/03 build --budget 8000
+   ./.git-memory-scripts/git-memory-packet.sh F:007-auth-envelope review --format json
    ```
 
    The script picks the profile from the stage, assembles its layers, and writes to

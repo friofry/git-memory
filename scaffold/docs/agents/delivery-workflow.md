@@ -24,7 +24,7 @@ reads that line and corroborates it against repository evidence.
 | 9 | `rework` | Builder | Every blocking finding is fixed or explicitly deferred | Follow-up commits; review answered |
 | 10 | `ci` | CI | The checks are repeated independently of the builder | GitHub Actions runs under [`../../.github/workflows/`](../../.github/workflows/) |
 | 11 | `acceptance` | Human | Demo and evidence satisfy `acceptance.md` | Spec `Implemented in:` line; PR demo artifacts |
-| 12 | `memory` | Agent | Facts and decisions that changed are written back | `CONTEXT.md`, ADR, `decisions.md`; `scripts/check-memory.sh` green |
+| 12 | `memory` | Agent | Facts and decisions that changed are written back | `CONTEXT.md`, ADR, `decisions.md`; `.git-memory-scripts/check-memory.sh` green |
 
 Stages 7–9 form a loop: a review finding sends the feature back to `rework`, and
 fixed code goes through `checks` again. The `Stage:` line records the stage
@@ -62,7 +62,7 @@ look optional too.
 
 `Stage:` is the fine-grained position; `Status:` is the coarse one that
 [`../../specs/README.md`](../../specs/README.md) and the tracker speak in. They must agree —
-`scripts/check-memory.sh` enforces the mapping.
+`.git-memory-scripts/check-memory.sh` enforces the mapping.
 
 | `Stage:` | Allowed status |
 |----------|----------------|
@@ -103,7 +103,7 @@ Two consequences bind here:
 
 Only `feature`, `bug` and `architecture` are legal on a spec; a ticket may carry
 any of the eleven; a spike is `research` or `prototype`. The legality table is in
-[`../method/work-types.md`](../method/work-types.md) and `scripts/check-memory.sh`
+[`../method/work-types.md`](../method/work-types.md) and `.git-memory-scripts/check-memory.sh`
 enforces it.
 
 ## What the packet for this stage carries
@@ -119,7 +119,7 @@ back because a reviewer without the architecture context reviews syntax. `reques
 and `ci` have no profile — one is a human writing a sentence, the other is GitHub
 Actions.
 
-Assemble it with `./scripts/git-memory-packet.sh F:007-auth-envelope build`, or by
+Assemble it with `./.git-memory-scripts/git-memory-packet.sh F:007-auth-envelope build`, or by
 hand from that file's layer table when the script is not installed. Do not commit
 the result: a packet is a projection, recomputed per turn — see
 [`../memory.md`](../memory.md), "Projections".
@@ -204,7 +204,7 @@ The full 12-stage table is in [Stages](#stages) above.
 2. Edit the `Stage:` line in `specs/<NN>-<slug>/spec.md` in the **same commit** as
    that evidence, so git history carries the transition.
 3. Update `Status:` when the mapping above requires it.
-4. Run `./scripts/check-memory.sh` (add `--fix` to regenerate the specs table).
+4. Run `./.git-memory-scripts/check-memory.sh` (add `--fix` to regenerate the specs table).
 
 A `Stage:` line that no evidence supports is worse than no line at all —
 orientation reports the mismatch instead of the claim.

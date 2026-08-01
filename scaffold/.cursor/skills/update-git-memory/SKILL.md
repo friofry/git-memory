@@ -12,7 +12,7 @@ confirmation-driven update, not a blind scaffold overwrite.
 ## Preconditions
 
 - Run from the root of a project that already contains `docs/memory.md` and
-  `scripts/check-memory.sh`.
+  `.git-memory-scripts/check-memory.sh`.
 - Use `https://github.com/friofry/git-memory.git` unless the user explicitly
   supplies another git-memory remote or local clone.
 - Do not run Matt's `/setup-matt-pocock-skills`.
@@ -36,7 +36,7 @@ Compare the target with the fetched `scaffold/` and report four groups: missing
 upstream files, safe to add; existing files identical to upstream; existing files
 that differ and may carry project-owned changes; target-only files, which are left
 alone. Pay particular attention to `.cursor/skills/`, `docs/agents/`,
-`docs/memory.md`, `AGENTS.md`, `templates/`, `scripts/` and `.github/workflows/`.
+`docs/memory.md`, `AGENTS.md`, `templates/`, `.git-memory-scripts/` and `.github/workflows/`.
 
 Never treat `CONTEXT.md`, `active-context.md`, `context.md`, feature specs, ADRs,
 domain docs, architecture docs, rules, `.scratch/`, or project test commands as
@@ -45,7 +45,7 @@ replaceable seed content.
 ## 3. Detect and report a v1 target
 
 The target is on v1 if any of these hold: no `docs/method/` directory; a root
-`context.md`; `scripts/` holding only `check-memory.sh`; specs whose headers carry
+`context.md`; `.git-memory-scripts/` holding only `check-memory.sh`; specs whose headers carry
 `Status:` and `Stage:` but no `ID:` or `Type:`. Say which of the four you observed,
 then walk the user through this section before copying anything.
 
@@ -56,7 +56,7 @@ then walk the user through this section before copying anything.
 |----------|-----------|----------------|
 | Method layer | How work is typed, addressed, gated and packaged, addressable as `M:` refs | `docs/method/` |
 | Node header | `ID:`, `Type:`, `Parent:`, `Children:`, `Blocked by:`, `Refs:` on specs, tickets and spike READMEs | existing node files |
-| Three scripts | `git-memory-resolve.sh` (address to path), `git-memory-graph.sh` (the work graph), `git-memory-packet.sh` (the context envelope) | `scripts/` |
+| Three scripts | `git-memory-resolve.sh` (address to path), `git-memory-graph.sh` (the work graph), `git-memory-packet.sh` (the context envelope) | `.git-memory-scripts/` |
 | Delivery workflow | Project tests, lint and typecheck, with no path filter, meant to be the required check | `.github/workflows/delivery.yml` |
 | GitHub intake | Four issue forms, a pull request template carrying the handoff baton, `CODEOWNERS` | `.github/ISSUE_TEMPLATE/`, `.github/` |
 | `prepare-packet` | The slash-only skill that assembles a stage's packet before a long turn | `.cursor/skills/prepare-packet/` |
@@ -73,7 +73,7 @@ so one silently clobbers the other on checkout:
 git mv context.md active-context.md
 ```
 
-Run it in the target repository, not in the seed. `scripts/check-memory.sh` fails on
+Run it in the target repository, not in the seed. `.git-memory-scripts/check-memory.sh` fails on
 a root `context.md` and prints this exact command, so the check tells the user the
 same thing this skill does.
 
@@ -135,9 +135,9 @@ npx skills@latest update
 ## 6. Verify
 
 ```bash
-chmod +x scripts/*.sh
-./scripts/check-memory.sh --fix
-./scripts/check-memory.sh --strict
+chmod +x .git-memory-scripts/*.sh
+./.git-memory-scripts/check-memory.sh --fix
+./.git-memory-scripts/check-memory.sh --strict
 ```
 
 The default run must be green before you report success. Treat `--strict` output as

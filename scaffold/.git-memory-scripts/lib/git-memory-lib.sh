@@ -11,7 +11,7 @@
 # address gets one resolver.
 #
 # Every caller runs from the repository root, so source this as
-#   . scripts/lib/git-memory-lib.sh
+#   . .git-memory-scripts/lib/git-memory-lib.sh
 # after the usual cd "$(dirname "$0")/..".
 
 # --- 1. one header field -------------------------------------------------------

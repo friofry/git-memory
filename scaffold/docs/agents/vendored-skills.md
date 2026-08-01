@@ -68,7 +68,7 @@ the three adapter docs below — never inside a vendored `SKILL.md`.
 `computedHash` in `skills-lock.json` is the CLI's own value, computed in a way we
 cannot reproduce locally, so the bytes are pinned a second way:
 `../../.agents/skills.sha256` lists a sha256 for
-every vendored file and `scripts/check-memory.sh` compares it. An edit to a
+every vendored file and `.git-memory-scripts/check-memory.sh` compares it. An edit to a
 vendored skill therefore fails the check until someone regenerates the manifest,
 which puts the change in the diff instead of leaving it silent. Do not hand-write
 either file; add or update through the CLI, then regenerate.
@@ -81,7 +81,7 @@ npx skills@latest add mattpocock/skills -s research -s tdd -a universal -y
 npx skills@latest update
 
 # record the new bytes
-./scripts/check-memory.sh --fix
+./.git-memory-scripts/check-memory.sh --fix
 ```
 
 ## What upstream assumes, and what this repo answers
@@ -113,7 +113,7 @@ npx skills@latest update
 Upstream `to-spec` writes one document (Problem Statement, Solution, User
 Stories, Implementation Decisions, Testing Decisions, Out of Scope) and labels it
 `ready-for-agent`. This repo splits a feature across four files whose presence
-`scripts/check-memory.sh` enforces, and tracks state with `Status:` / `Stage:`
+`.git-memory-scripts/check-memory.sh` enforces, and tracks state with `Status:` / `Stage:`
 lines rather than a label. A spec migrated in from before that rule may still carry
 the upstream one-document shape; leave it and split at the next real change.
 
@@ -140,7 +140,7 @@ older tickets here use a plain `Status:` line; `wayfinder` adds `claimed` /
 
 **Resolution:** both line forms are accepted, and the permitted values are the
 table in [`triage-labels.md`](triage-labels.md) — now including the repo-local
-additions. `scripts/check-memory.sh` rejects a value outside it, so the next
+additions. `.git-memory-scripts/check-memory.sh` rejects a value outside it, so the next
 drift shows up as a failing check instead of a fourth vocabulary.
 
 ### 3. ADR shape
@@ -169,7 +169,7 @@ own four-value set — including `grilling` (a ticket that exists to interrogate
 plan) and `task` (a ticket that exists to do the work). This repository types every
 node from one closed set of eleven values, defined in
 [`../method/work-types.md`](../method/work-types.md) and checked by
-`scripts/check-memory.sh`.
+`.git-memory-scripts/check-memory.sh`.
 
 **Resolution:** rewrite the line as the ticket arrives.
 

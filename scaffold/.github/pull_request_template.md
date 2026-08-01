@@ -32,7 +32,7 @@ block is what closes `M:gate-checks`.
 ```
 pnpm test src/events      24 passed, 0 failed
 pnpm typecheck            clean
-./scripts/check-memory.sh green
+./.git-memory-scripts/check-memory.sh green
 ```
 
 ## Acceptance scenarios covered
@@ -64,7 +64,7 @@ evidence here, tick against it.
 - [ ] `M:gate-acceptance` — the scenarios above were demonstrated, not inferred
       from the tests passing
 - [ ] `M:gate-memory` — every fact this change altered has a named home in the
-      Memory delta, and `./scripts/check-memory.sh` is green
+      Memory delta, and `./.git-memory-scripts/check-memory.sh` is green
 
 Stop conditions: do not approve because CI is green — a file of the right name
 with the wrong content passes every check in this repository. Do not accept a

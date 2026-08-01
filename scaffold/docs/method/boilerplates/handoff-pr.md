@@ -19,7 +19,7 @@ Memory delta: CONTEXT.md term `Event envelope` gains the `sig` field;
 Commands run:
   pnpm test src/events      24 passed, 0 failed
   pnpm typecheck            clean
-  ./scripts/check-memory.sh green
+  ./.git-memory-scripts/check-memory.sh green
 
 Closes #142
 ````

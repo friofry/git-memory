@@ -2,13 +2,13 @@
 #
 # The twelve-stage checklist for a feature, with a box per stage.
 #
-#   scripts/git-memory-progress.sh                  every unfinished feature
-#   scripts/git-memory-progress.sh F:012-transfers  one feature
-#   scripts/git-memory-progress.sh --all            include implemented features
-#   scripts/git-memory-progress.sh --format json
-#   scripts/git-memory-progress.sh --strict         exit 1 on a claimed-but-unproven stage
-#   scripts/git-memory-progress.sh --cheatsheet     one line per stage: what drives it
-#   scripts/git-memory-progress.sh --help           usage, exit 0
+#   .git-memory-scripts/git-memory-progress.sh                  every unfinished feature
+#   .git-memory-scripts/git-memory-progress.sh F:012-transfers  one feature
+#   .git-memory-scripts/git-memory-progress.sh --all            include implemented features
+#   .git-memory-scripts/git-memory-progress.sh --format json
+#   .git-memory-scripts/git-memory-progress.sh --strict         exit 1 on a claimed-but-unproven stage
+#   .git-memory-scripts/git-memory-progress.sh --cheatsheet     one line per stage: what drives it
+#   .git-memory-scripts/git-memory-progress.sh --help           usage, exit 0
 #
 # Two independent signals per stage, and the point of the script is where they
 # disagree:
@@ -25,10 +25,10 @@ shopt -s nullglob
 
 cd "$(dirname "$0")/.." || exit 1
 
-if [ -r scripts/lib/git-memory-lib.sh ]; then
-  . scripts/lib/git-memory-lib.sh
+if [ -r .git-memory-scripts/lib/git-memory-lib.sh ]; then
+  . .git-memory-scripts/lib/git-memory-lib.sh
 else
-  printf '%s: missing scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
+  printf '%s: missing .git-memory-scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
   exit 2
 fi
 
@@ -522,10 +522,10 @@ if [ -n "$address" ]; then
   resolved=""
   case "$address" in
     F:*)
-      if [ -x scripts/git-memory-resolve.sh ] || [ -r scripts/git-memory-resolve.sh ]; then
-        resolved=$(bash scripts/git-memory-resolve.sh "$address" 2>/dev/null)
+      if [ -x .git-memory-scripts/git-memory-resolve.sh ] || [ -r .git-memory-scripts/git-memory-resolve.sh ]; then
+        resolved=$(bash .git-memory-scripts/git-memory-resolve.sh "$address" 2>/dev/null)
       fi
-      [ -n "$resolved" ] || die "address does not resolve: $address" "try scripts/git-memory-resolve.sh --all"
+      [ -n "$resolved" ] || die "address does not resolve: $address" "try .git-memory-scripts/git-memory-resolve.sh --all"
       ;;
     *)
       for d in specs/[0-9][0-9][0-9]-*/; do

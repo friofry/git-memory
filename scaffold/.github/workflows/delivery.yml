@@ -80,7 +80,7 @@ jobs:
       # memory.yml cannot be a required check, because it is path-filtered.
       # Uncomment the next line to make memory consistency part of the gate
       # that actually blocks a merge.
-      # - run: ./scripts/check-memory.sh
+      # - run: ./.git-memory-scripts/check-memory.sh
 
       - name: No test command configured
         run: |

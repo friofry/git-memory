@@ -1,427 +1,333 @@
 # git-memory
 
-Drop this into a repository and an agent recovers project state from Git artifacts
-instead of from chat memory. A feature travels through twelve named stages whose
-evidence — spec, tickets, review, CI, memory write-back — sits in files a `grep` can
-find, and seven gates decide when it is allowed to move.
+Drop this into a repository and an agent recovers project state from Git
+artifacts instead of from chat memory.
 
 Works in **Claude Code**, **Cursor**, and any harness that reads `AGENTS.md`.
-
 Born in [`friofry/starcraft-benchmark`](https://github.com/friofry/starcraft-benchmark);
-this repo is the domain-free extract.
+this is the domain-free extract.
 
-## The split
+## Why
 
-This repository owns **process**: where a fact lives, what a thing is called, which
-stage it is in, what evidence lets it move, and what context an agent gets for one
-turn. [Matt Pocock's agent skills](https://github.com/mattpocock/skills) supply the
-**craft**: how to interview a plan, design a deep module, drive TDD, review a diff,
-debug something hard.
+An agent forgets between sessions. That is fixable with context.
 
-The two are genuinely separable, and after v2 the dependency is optional in kind: a
-repository with this seed and no vendored skills still has its stages, gates,
-packets, addresses and checks. It just has a less skilled agent working inside them.
+You forget *why*, and that is only fixable by writing it down.
 
-Eleven upstream skills are vendored because nothing here replaces them. Six that
-used to be vendored no longer are — each was the entry point for a stage this repo
-now drives itself, and two entry points for one stage is how an agent picks the
-wrong one. The table is in
-[`matt-skill-sets.txt`](matt-skill-sets.txt), "Not vendored, because this repository
-owns the stage".
+Six weeks after a decision, the argument that produced it is gone, and the
+version of you that shows up is tired and wants the elegant solution. Without a
+record, the tired one wins — not because the argument is better, but because it
+is the one in the room. A repository that keeps its reasoning does not have that
+fight twice.
 
-## Packets — the part to understand first
+So: a feature travels through twelve named stages. Its evidence — spec, tickets,
+review, CI, the write-back to memory — sits in files a `grep` can find, and seven
+gates decide when it is allowed to move. Nothing lives in a chat log, and nothing
+lives in your head.
 
-Every session, someone decides what the agent should be told. Do it by hand and
-you either paste the whole feature and bury the one thing that matters, or paste
-too little and get code written against a contract the agent never saw.
+The cost is real: roughly 15–20% more time, and on a one-day script it is pure
+loss. The signal for whether it pays is not team size but **number of returns**.
+Come back to the code once and the memory is still in your head. Come back five
+times over six months and each return without a record costs an evening of
+reconstruction.
 
-A **packet** is that decision, generated. It is the context envelope for **one
-turn, at one stage** — not "the feature", but what this stage needs from it.
+## Difference from Matt Pocock's skills
+
+[Matt's skills](https://github.com/mattpocock/skills) are the **craft**: how to
+interview a plan, design a deep module, drive TDD, review a diff, debug something
+hard. They are excellent and this repository does not try to replace them.
+
+This repository is the **process**: where a fact lives, what a thing is called,
+which stage it is in, what evidence lets it move, and what the agent is told for
+one turn.
+
+The rule for what gets vendored follows from that. If an upstream skill was the
+entry point for a stage this repository now drives itself, it goes — two entry
+points for one stage is how an agent picks the wrong one. If it is craft, it
+stays, because nothing here replaces it and nothing is planned to.
+
+| | Vanilla upstream | With git-memory |
+|--|--|--|
+| Spec | one `/to-spec` document | four files, plus `Status:` and `Stage:` |
+| "Where is this feature?" | chat, tracker, memory | a `Stage:` line, checked against evidence |
+| Planning | `/to-tickets` | `/plan-feature` — typed tickets, `Blocked by:` edges, cycle detection, scenario coverage |
+| Context per turn | decided again every session | the stage's packet, assembled by a script |
+| What blocks a merge | nothing in particular | seven gates and a required check that always runs |
+| Acceptance | tests are green | six scenarios verified against a demonstration |
+
+After v2 the dependency is optional in kind: a repository with this seed and no
+vendored skills still has its stages, gates, packets, addresses and checks. It
+just has a less skilled agent working inside them.
+
+## The twelve stages
+
+| Stage | Owner | Done when |
+|-------|-------|-----------|
+| `request` | Human | The wanted outcome is written down, not just said |
+| `research` | Agent | Unknowns are named; the ones needing data get a spike |
+| `spec` | Agent | Outcome, design and Given/When/Then exist and agree |
+| `approval` | **Human** | Meaning and architecture are approved |
+| `plan` | Agent | Work is sliced into tickets against the acceptance scenarios |
+| `build` | Agent | The smallest slices are implemented |
+| `checks` | Agent | The commands in `AGENTS.md` pass locally |
+| `review` | Agent | An independent pass tried to find defects |
+| `rework` | Agent | Every blocking finding is fixed or explicitly deferred |
+| `ci` | CI | The checks are repeated independently of the builder |
+| `acceptance` | **Human** | A demonstration satisfies `acceptance.md` |
+| `memory` | Agent | Facts and decisions that changed are written back |
+
+Three stages need a human. Everything between them is agent-driven.
+
+Six axes stay orthogonal, and confusing any two is the failure the model exists
+to prevent. **Address** is which node — derived from the path, never stored.
+**Type** is what kind of work, on the node file. **Stage** is where the feature
+is, in `spec.md` and nowhere else. **Status** is how far along. **Owner** is
+derived from the stage, so no file carries an `Owner:` line and no two files can
+disagree about it. **Evidence** is what proves the claim.
+
+A `Type: research` ticket inside a `Stage: build` feature is not a contradiction.
+It is a Tuesday: you were building and found something you had to go look up.
+
+## Packets
+
+Every session, someone decides what the agent is told. By hand you either paste
+the whole feature and bury the one thing that matters, or paste too little and
+get code written against a contract the agent never saw.
+
+A **packet** is that decision, generated — the context envelope for one turn at
+one stage.
 
 ```bash
-./scripts/git-memory-packet.sh T:012/03 build
+./.git-memory-scripts/git-memory-packet.sh T:012/03 build
 ```
 
-Six layers exist. A **profile** is which of them a stage carries:
+Six layers exist; a **profile** is which of them a stage carries.
 
 | Layer | Carries |
 |-------|---------|
-| Route | which node, which stage, what you are being asked to do |
+| Route | which node, which stage, what you are asked to do |
 | Objective | the outcome in one sentence |
 | Contract | acceptance scenarios, scope, rules the change must obey |
 | Memory | glossary terms and ADRs the feature touches |
 | Slice | the ticket under work, the queue, the commands, what changed |
 | Evidence | command output, review artifacts, CI |
 
-`build` carries Route, Contract and Slice — and **deliberately drops the
-glossary**, because a builder implementing one ticket does not need the domain
+`build` carries Route, Contract and Slice, and **deliberately drops the
+glossary** — a builder implementing one ticket does not need the domain
 vocabulary competing for attention. `review` puts Memory and Evidence back,
 because a reviewer without architecture context reviews syntax.
 
 An omitted layer is still named, with its reason, so a reader can tell *empty*
-from *never requested*:
+from *never asked for* — `Memory: omitted (build profile)`, not silence.
 
-```
-- Included layers: Route, Contract, Slice
-- Omitted layers: Objective, Memory, Evidence
-- Size: 2831 bytes, ~707 tokens (estimated as bytes / 4), no --budget
+A `build` packet is about **1.3k tokens**; the same feature's four files plus
+tickets and the workflow is **8.2k**, most of it about stages you are not on. One
+profile is expensive on purpose — `approval`, at 2.5k, quotes all four spec files
+in full, because a human who approves a summary approved the summary.
 
-## Memory
+`--budget N` truncates the lowest-priority layer within itself and says by how
+much; a required layer is never dropped. Use it for a long turn, not as a
+default: a truncated packet looks like a complete one.
 
-Memory: omitted (build profile). The layer is not missing — the profile leaves
-it out to buy the reader's attention for the layers above (M:packet-build).
-```
+Packets print to stdout and are never committed. Full table:
+[`packet-profiles.md`](scaffold/docs/method/packet-profiles.md).
 
-**Why it is worth the trouble.** A `build` packet is about **1.3k tokens**.
-Reading the same feature's four files plus its tickets, `docs/memory.md` and the
-workflow is **8.2k** — six times the context for the same turn, most of it about
-stages you are not on.
+## Scripts
 
-**The one profile that is expensive on purpose** is `approval`, at 2.5k: it
-quotes all four spec files *in full*. A human who approves a summary approved the
-summary. Do not compress that one.
+Plain bash, portable to macOS 3.2 and BSD userland, no dependencies. Each runs
+from anywhere and exits 2 on a usage error, so a typo never reads as a clean
+repository.
 
-`--budget N` caps a packet at roughly N tokens, truncating the lowest-priority
-layer *within itself* and saying by how much. A layer the profile marks required
-is never dropped. Use it for a long turn on a large feature, not as a default —
-a truncated packet looks like a complete one.
+| Script | What it does |
+|--------|--------------|
+| `check-memory.sh` | The consistency checks no single file can perform. `--fix` regenerates derived blocks; `--strict` adds what v2's node header demands |
+| `git-memory-resolve.sh` | Address to path — **the only address parser in the system**. `--print` gives the section an address names rather than the file holding it |
+| `git-memory-packet.sh` | The context envelope, per stage |
+| `git-memory-graph.sh` | The work graph: `ndjson`, `md` or `dot` |
+| `git-memory-progress.sh` | The twelve stages as a checklist, filled from evidence. `--cheatsheet` prints one line per stage |
+| `test/run-tests.sh` | 232 assertions on throwaway fixtures, under 30 seconds |
 
-Packets print to stdout and are **never committed**. A committed projection is a
-second copy of facts the node headers already carry, and it goes stale the first
-time someone edits a `Refs:` line. The full profile table is
-[`scaffold/docs/method/packet-profiles.md`](scaffold/docs/method/packet-profiles.md).
+Addresses are six families, each a projection of a path: `F:012-transfers`,
+`T:012/03`, `S:012/proto-a`, `ADR:0011`, `TERM:envelope`, `M:gate-approval`. A
+ticket address carries the feature's **number**, not its slug, so renaming a
+feature invalidates nothing. Details:
+[`addressing.md`](scaffold/docs/method/addressing.md).
 
-## What you get
+`git-memory-progress.sh` has one box most tools do not. `[!]` means the feature
+walked past that stage with nothing to show for it — not *wrong*, but
+**unproven**, which is a different and more useful claim.
 
-| Piece | Role |
-|-------|------|
-| `scaffold/` | The files copied into a target project |
-| `skills/setup-git-memory/` | One-shot installer (`/setup-git-memory`) |
-| `skills/update-git-memory/` | Confirmation-driven updater, including v1 → v2 (`/update-git-memory`) |
-| `matt-skill-sets.txt` | The `minimal` and `full` lists, and why each upstream skill is in or out |
-| `scripts/package-claude-web-skills.sh` | Per-skill ZIPs for Claude.ai upload |
+## Skills
 
-Inside [`scaffold/`](scaffold/):
+Nine are authored here and drive a stage:
 
-- [`docs/memory.md`](scaffold/docs/memory.md) — the layer map, node headers, and the one-home rule
-- [`docs/agents/delivery-workflow.md`](scaffold/docs/agents/delivery-workflow.md) — the stages `request` … `memory`, and which skill performs each
-- [`docs/method/`](scaffold/docs/method/) — work types, addressing, gates, packet profiles, and the referenced boilerplates
-- [`docs/agents/vendored-skills.md`](scaffold/docs/agents/vendored-skills.md) — what upstream skills assume and what this repo answers
-- [`docs/agents/github-gates.md`](scaffold/docs/agents/github-gates.md) — which GitHub mechanism enforces which gate, and the two that pass themselves
-- [`.cursor/skills/`](scaffold/.cursor/skills/) — nine repo-authored skills, listed under **After setup**
-- [`scripts/`](scaffold/scripts/) — `check-memory.sh`, the resolver, graph and packet scripts, a shared reader under `lib/`, and a fixture-based `test/run-tests.sh`
-- [`.github/`](scaffold/.github/) — two workflows, four issue forms, a PR template, `CODEOWNERS`
-- [`templates/`](scaffold/templates/) — empty forms for specs, tickets, ADRs, reviews, spikes
+`ask-git-memory` · `orient-in-project` · `prepare-packet` ·
+`create-feature-spec` · `plan-feature` · `implement-feature` · `review-change` ·
+`review-architecture` · `update-git-memory`
 
-## Agent harness support
+Thirteen are vendored from upstream and supply craft, never placement:
 
-| Harness | How skills load | Project contract |
-|---------|-----------------|------------------|
-| Claude Code | `.claude/skills/` → symlink to `.cursor/skills/` | `CLAUDE.md`, one line, pointing at `AGENTS.md` |
-| Cursor | `.cursor/skills/` | `AGENTS.md` |
-| Codex, Amp, and others reading `AGENTS.md` | `.cursor/skills/` or their own path | `AGENTS.md` |
-| Claude.ai (web) | Uploaded ZIPs — see **Claude Web** below | Paste `AGENTS.md` into the project |
+`research` · `grilling` · `grill-with-docs` · `domain-modeling` · `tdd` ·
+`codebase-design` · `code-review` · `diagnosing-bugs` · `prototype` ·
+`resolving-merge-conflicts` · `improve-codebase-architecture` · `wayfinder` ·
+`writing-great-skills`
 
-The seed ships `.claude/skills` as a **symbolic link**, not a copy, so both harnesses
-load the same bytes and cannot drift. `CLAUDE.md` deliberately contains no build
-commands and no stage table — it is a pointer, because a second copy of the contract
-is the exact failure `docs/memory.md` exists to prevent.
+The `minimal` set keeps seven of those. Which, and why each of the six dropped
+ones was dropped: [`matt-skill-sets.txt`](matt-skill-sets.txt).
 
-If your platform does not restore symlinks (`git config core.symlinks` reads `false`
-on Windows without Developer Mode), replace the link with a copy;
-`./scripts/check-memory.sh` verifies the two directories hold the same skills either
-way and tells you when they diverge.
+## Install, update, remove
 
-## Install into another project
-
-### A. Agent skill (recommended)
-
-1. Add the installer to the target project or to your user skills:
+**Install.** Add the installer, then run it in the target project:
 
 ```bash
 npx skills@latest add friofry/git-memory -s setup-git-memory -a universal -y
-
-# or copy from a clone:
-# cp -R skills/setup-git-memory <target>/.cursor/skills/
 ```
 
-2. In the target project, run **`/setup-git-memory`**.
-3. Answer scope (`full` / `minimal`), then the method layer and the GitHub intake
-   layer as separate opt-ins, then the merge policy. Confirm the plan. It vendors
-   the upstream skills, runs `./scripts/check-memory.sh --fix`, and runs
-   `./scripts/test/run-tests.sh` once to prove the tooling works in your environment
-   before it reports success.
+It asks for scope, the method and GitHub layers as separate opt-ins, and the
+merge policy; confirms the plan before writing; and runs the test suite once in
+your environment before reporting success.
 
-### B. Manual
+Manually, if you would rather see every step:
 
 ```bash
 git clone https://github.com/friofry/git-memory.git /tmp/git-memory
 cd <your-project>
-
-# copy the seed (never overwrite an existing AGENTS.md / CONTEXT.md blindly)
 rsync -a --ignore-existing /tmp/git-memory/scaffold/ ./
-
-# vendor the craft skills (full set)
-npx skills@latest add mattpocock/skills \
-  -s research -s grilling -s domain-modeling -s grill-with-docs \
-  -s tdd -s codebase-design -s code-review -s diagnosing-bugs \
-  -s prototype -s resolving-merge-conflicts \
-  -s improve-codebase-architecture -s wayfinder -s writing-great-skills \
-  -a universal -y
-
-chmod +x scripts/*.sh scripts/test/*.sh
-./scripts/test/run-tests.sh      # proves the tool layer runs here
-./scripts/check-memory.sh --fix
+ls -l .claude/skills || ln -sfn ../.cursor/skills .claude/skills
+chmod +x .git-memory-scripts/*.sh .git-memory-scripts/test/*.sh
+./.git-memory-scripts/test/run-tests.sh && ./.git-memory-scripts/check-memory.sh --fix
 ```
 
-`rsync` does not recreate the `.claude/skills` symlink on every platform. Check it:
+Then fill `docs/product/charter.md`, put the real commands into `AGENTS.md`
+**and** into `.github/workflows/delivery.yml`, and replace
+`@your-org/memory-owners` in `.github/CODEOWNERS`. Nothing under `.github/`
+blocks a merge until branch protection is switched on.
+
+**Update.** `/update-git-memory` adds what is missing and asks before merging any
+file that differs. It handles v1 → v2, which is additive with exactly one rename
+(`context.md` → `active-context.md`); every v2 requirement lives behind
+`--strict`, so you migrate when ready rather than when the update lands.
 
 ```bash
-ls -l .claude/skills     # -> ../.cursor/skills
-# if missing: ln -sfn ../.cursor/skills .claude/skills
+npx skills@latest add friofry/git-memory -s update-git-memory -a universal -y
+npx skills@latest update && ./.git-memory-scripts/check-memory.sh --fix   # craft skills only
 ```
 
-Then fill [`docs/product/charter.md`](scaffold/docs/product/charter.md), grow
-`CONTEXT.md`, put the real commands into `AGENTS.md` **and** into
-[`.github/workflows/delivery.yml`](scaffold/.github/workflows/delivery.yml), and
-replace `@your-org/memory-owners` in
-[`.github/CODEOWNERS`](scaffold/.github/CODEOWNERS). Nothing under `.github/` blocks
-a merge until branch protection is switched on.
-
-## After setup
-
-| Intent | Skill |
-|--------|-------|
-| What should happen next? | `/ask-git-memory` |
-| Where are we? | `/orient-in-project` |
-| Starting a long turn | `/prepare-packet` — prints the context envelope this stage calls for |
-| New feature | `/create-feature-spec` → human approval → `/plan-feature` → `/implement-feature` |
-| Review | `/review-change` (drives vendored `/code-review`), `/review-architecture` |
-| Refresh the scaffold | `npx skills@latest add friofry/git-memory -s update-git-memory -a universal -y`, then `/update-git-memory` |
-| Refresh craft skills | `npx skills@latest update && ./scripts/check-memory.sh --fix` |
-
-`npx skills@latest update` refreshes skills installed through the CLI; it does not
-touch scaffold files already copied into a project. `/update-git-memory` compares
-the current upstream scaffold, adds what is missing, and asks before merging any
-existing file that differs.
-
-You say **what** and answer **yes/no**; the agent does **how** and writes the
-evidence into Git. Three stages need a human — `request`, `approval`, `acceptance` —
-and everything between them is agent-driven by stage. The stage table, the skill per
-stage, and the one prompt that starts a feature are in
-[`scaffold/docs/agents/delivery-workflow.md`](scaffold/docs/agents/delivery-workflow.md).
-
-Do **not** run Matt's `/setup-matt-pocock-skills` on a project that already has this
-seed — it would overwrite `docs/agents/issue-tracker.md`, `triage-labels.md` and
-`domain.md`. Do **not** edit files under `.agents/skills/`; bindings and conflicts
-live in [`scaffold/docs/agents/vendored-skills.md`](scaffold/docs/agents/vendored-skills.md).
-
-## What v2 adds
-
-v1 answered "where does this fact live?" and "which stage is this feature in?". v2
-answers "what kind of work is this?", "how do I name it?", "what do I send the
-agent?" and "what actually blocks a merge?".
-
-### Six orthogonal axes
-
-Confusing any two of these is the failure mode the whole model exists to prevent.
-
-| Axis | Question | Home |
-|------|----------|------|
-| Address | Which node is this? | The path — the address is derived from it, never stored |
-| Type | What kind of work is it? | `Type:` line on the node file |
-| Stage | Where is it in the lifecycle? | `Stage:` line in `specs/<NN>-<slug>/spec.md`, and nowhere else |
-| Status | How far along, coarsely? | `Status:` line — feature status on the spec, triage label on a ticket |
-| Owner | Who acts next? | Derived from the stage; no file carries an `Owner:` line |
-| Evidence | What proves the claim? | Files, checks, PRs, CI runs, reviews |
-
-`Type:` is not `Stage:`. A `Type: research` ticket can exist while its feature sits
-at `Stage: build` — they answer different questions about different things.
-
-### The method layer
-
-**Project truth** (`CONTEXT.md`, `docs/domain/`, `docs/architecture/`, `docs/adr/`,
-`specs/`) says what this product is. **Method truth**
-([`scaffold/docs/method/`](scaffold/docs/method/)) says how work is typed,
-addressed, gated and handed over. They do not mix: a review-severity rubric pasted
-into the glossary is skipped by the people who came for the vocabulary and lost to
-the people who needed the process.
-
-Method truth is portable — it ships intact into the next repository — and it is
-referenced by address, never copied. Eleven work types, six `M:` families, and the
-rule for adding one are in
-[`scaffold/docs/method/README.md`](scaffold/docs/method/README.md).
-
-### Addressing
-
-An address is a short projection of a path. Nothing is stored under an address that
-is not already stored at a path, so renaming a file cannot orphan a reference that
-`scripts/git-memory-resolve.sh` cannot recompute.
-
-| Family | Example | Resolves to |
-|--------|---------|-------------|
-| Feature | `F:007-auth-envelope` | `specs/007-auth-envelope/` |
-| Ticket | `T:007/03` | `.scratch/auth-envelope/issues/03-*.md` |
-| Spike | `S:007/proto-a` | `spikes/auth-envelope/proto-a/` |
-| ADR | `ADR:0012` | `docs/adr/0012-*.md` |
-| Term | `TERM:event-envelope` | `CONTEXT.md`, that heading |
-| Method | `M:gate-approval` | a `docs/method/**` heading |
-
-A ticket address carries the feature's **number**, not its slug, so renaming a
-feature does not invalidate every reference to its queue. Resolution rules and
-worked examples: [`scaffold/docs/method/addressing.md`](scaffold/docs/method/addressing.md).
-
-### Packets
-
-Explained in full under **Packets — the part to understand first**, above. In one
-line: the stage's profile decides which of the six layers this turn is given, the
-result prints to stdout, and nothing is committed.
-
-### Gates
-
-Seven gates: request, approval, checks, review, CI, acceptance, memory. Each is a
-named moment where a stage transition is blocked until specific evidence exists, and
-each is addressable — `M:gate-approval` goes in a `Refs:` line, a PR body or a
-prompt. Gates add no stages; they are the enforcement projection of the stage table.
-Who opens each, what closes it, and the one failure mode it prevents:
-[`scaffold/docs/method/gates.md`](scaffold/docs/method/gates.md).
-
-### The GitHub layer
-
-Issue forms carry `M:gate-request`; the PR template carries the handoff baton (node
-address, stage, blocker, memory delta, commands and their results, closing keyword);
-`CODEOWNERS` plus required review carries `M:gate-approval`.
-
-Two workflows, split on purpose.
-[`memory.yml`](scaffold/.github/workflows/memory.yml) is path-filtered and advisory.
-[`delivery.yml`](scaffold/.github/workflows/delivery.yml) has no path filter and is
-the one you make a required check — **a skipped job reports success**, so a
-path-filtered workflow passes on exactly the changes it was never allowed to
-inspect. Prefer strict required checks on the default branch. The whole layer ships
-inert until branch protection is on:
-[`scaffold/docs/agents/github-gates.md`](scaffold/docs/agents/github-gates.md).
-
-## Versus vanilla craft skills
-
-Matt's skills are the craft. This repo adds a process that survives the end of a
-chat session. The adapter-level detail is in
-[`scaffold/docs/agents/vendored-skills.md`](scaffold/docs/agents/vendored-skills.md).
-
-| | Vanilla upstream | This repo (after setup) |
-|--|--|--|
-| Spec | One `/to-spec` document | Four files under `specs/` + `Status:` / `Stage:` |
-| "Where is the feature?" | Chat / tracker / memory | `Stage:` line in Git; `/orient-in-project` checks it against evidence |
-| Planning | `/to-tickets` | `/plan-feature` — five typed boilerplates, `Blocked by:` edges, cycle detection, scenario-coverage proof |
-| Tickets | `.scratch/` or GitHub Issues | Same local markdown + closed label vocabulary + `check-memory.sh` |
-| Work typing | `grilling` / `task` from `/wayfinder` | Eleven types, one closed set, checked — the two aliases are rewritten on arrival |
-| Naming a thing | Prose and file paths | Six address families, one resolver, usable in prompts and PR bodies |
-| Context per turn | Decided again every session | The stage's packet profile, assembled by a script |
-| Process boilerplate | Inside whichever skill uses it | `docs/method/`, cited by `M:` address, never pasted |
-| TDD / review / debugging | `/tdd`, `/code-review`, `/diagnosing-bugs` | Same craft, unchanged; entry via `implement-feature` / `review-change` |
-| Contracts | "Read CONTEXT / ADR" | Plus enforceable one-home checks |
-| What blocks a merge | Nothing in particular | Seven gates, and a required check that always runs |
-| Setup | `/setup-matt-pocock-skills` | Adapters already in the seed — do not re-run Matt setup |
-| Autonomy | You hold the process in your head | Twelve stages in Git; human gates are request / approval / acceptance |
-
-## Claude Web (upload ZIPs)
-
-Claude.ai accepts **one skill per ZIP** (`skill-name/SKILL.md` at the archive root)
-and cannot pull from `npx skills` or from GitHub. Package this repo's skills plus the
-craft set:
+**Remove.** Nothing here is load-bearing for your code, so removal is deletion.
+The tool layer and the method layer go first:
 
 ```bash
-./scripts/package-claude-web-skills.sh              # full craft set
-./scripts/package-claude-web-skills.sh --set minimal
+git rm -r .git-memory-scripts/check-memory.sh .git-memory-scripts/git-memory-*.sh .git-memory-scripts/lib .git-memory-scripts/test
+git rm -r docs/method .cursor/skills .claude .agents skills-lock.json CLAUDE.md
+git rm .github/workflows/memory.yml .github/workflows/delivery.yml
 ```
 
-Artifacts land in `dist/claude-web/`:
+Keep `specs/`, `.scratch/`, `docs/adr/`, `CONTEXT.md` and `AGENTS.md` — that is
+**your** memory, ordinary markdown, still readable with nothing installed. Node
+headers become inert lines. Drop `delivery.yml` from branch protection too, or
+the required check blocks every pull request forever.
 
-| Artifact | Use |
-|----------|-----|
-| `skills/<name>.zip` | Ten repo skills plus the chosen craft set. Upload each in **Customize → Skills → Upload a skill**, then enable it |
-| `all-skill-zips.zip` | Convenience bag of those ZIPs (still upload one by one from inside) |
-| `git-memory-claude-plugin.zip` | Claude Code / org plugin layout, for distributing the skills without the scaffold |
-| `MANIFEST.txt` | The exact skill list for the chosen set |
+## A feature, end to end
 
-`setup-git-memory.zip` is only the installer — it embeds `scaffold/`, including the
-scripts and the test harness, because in this channel there is no clone to copy bytes
-from. It deliberately does **not** carry `.claude/skills`: that is a symbolic link in
-the repository, and zip stores what a link points at, so shipping it would put a
-second full copy of every repo skill in the archive. The installer recreates the link
-with one command (`ln -sfn ../.cursor/skills .claude/skills`). The craft skills and the other repo skills are **sibling** ZIPs in the same
-`skills/` folder, not inside that archive. The script fails with a count error rather
-than leaving one ZIP behind.
+The request is a bug: a user's expense report double-counts money moved between
+their own accounts.
 
-The packager clones [mattpocock/skills](https://github.com/mattpocock/skills) (or
-takes `--matt-dir`), rewrites `.agents/skills/…` path references to uploaded-skill
-names, and truncates descriptions to Claude's ~200-character limit. It discovers repo
-skills from `skills/` and `scaffold/.cursor/skills/`, so adding a skill needs no edit
-to the script.
+`research` finds an unknown that needs data rather than thought: what date window
+catches a transfer. A spike answers it and leaves a number — ±3 days, 99.9%
+coverage, 0.65% false pairs. Guessing ±7 would have tripled the false pairs and
+nobody would have known.
 
-## Layout of this repository
+`spec` writes four files, and the interview asks what nobody said out loud: what
+happens when the same statement is imported twice? That becomes a scenario.
+
+`approval` is a human reading all four in full. Reading them surfaces that
+currency transfers need four bank-specific parsers for 0.3% of rows — so they are
+cut, in writing, with the reason. Without the gate that decision is never made;
+the work just starts and stops halfway.
+
+`plan` cuts six tickets against the scenarios with real dependency edges. `build`
+and `checks` are ordinary work with `/tdd`.
+
+`review` finds a missing test case, and one thing only `/review-architecture`
+could see: the matcher imports the report aggregator, an edge pointing the wrong
+way against an ADR. The code worked. The arrow was backwards. `rework` answers
+the blocking findings and nothing else; the rest becomes a ticket at
+`needs-triage` rather than a good intention.
+
+`acceptance` runs the scenarios against a real statement and one fails — two
+identical subscriptions charged the same day on different cards, matched as a
+transfer. Every test was green. The rule gains a line: a pair needs opposite
+signs.
+
+`memory` writes the term into `CONTEXT.md`, the decision into an ADR with its own
+review condition, and `Implemented in: #47` onto the spec.
+
+Four evenings, one of them not writing code. That evening bought a number instead
+of a guess, a decision that stayed decided, an arrow turned around, and a bug
+that all the tests had missed.
+
+## Layout
 
 ```
 git-memory/
-├── README.md
-├── LICENSE
-├── matt-skill-sets.txt                 # the two sets, and why each skill is in or out
-├── scripts/
-│   └── package-claude-web-skills.sh    # Claude Web ZIP packager
-├── skills/
-│   ├── setup-git-memory/               # the installer skill
-│   └── update-git-memory/              # the safe updater skill
-└── scaffold/                           # bytes copied into targets
-    ├── AGENTS.md                       # the project contract
-    ├── CLAUDE.md                       # a pointer to AGENTS.md, nothing more
-    ├── CONTEXT.md
+├── matt-skill-sets.txt              # the two sets, and why each skill is in or out
+├── scripts/package-claude-web-skills.sh
+├── skills/                          # setup-git-memory, update-git-memory
+└── scaffold/                        # what gets copied into your project
+    ├── AGENTS.md                    # the contract
+    ├── CLAUDE.md                    # a pointer to AGENTS.md, nothing more
+    ├── CONTEXT.md                   # the domain glossary
     ├── docs/
-    │   ├── memory.md
-    │   ├── agents/                     # delivery workflow, tracker, vendored skills, github gates
-    │   ├── method/                     # types, addressing, gates, packet profiles
-    │   │   └── boilerplates/           # the prose that is cited, never pasted
-    │   └── adr/ · architecture/ · product/
-    ├── specs/ · .scratch/ · rules/ · templates/
-    ├── scripts/
-    │   ├── check-memory.sh
-    │   ├── git-memory-resolve.sh       # the only address parser
-    │   ├── git-memory-graph.sh
-    │   ├── git-memory-packet.sh
-    │   ├── lib/git-memory-lib.sh       # the only node-header reader
-    │   └── test/run-tests.sh
-    ├── .cursor/skills/                 # nine repo-authored skills
+    │   ├── memory.md                # the layer map and the one-home rule
+    │   ├── agents/                  # delivery workflow, vendored skills, github gates
+    │   └── method/                  # types, addressing, gates, packet profiles
+    ├── specs/ · .scratch/ · spikes/ · rules/ · templates/
+    ├── .git-memory-scripts/                     # the six above, plus lib/ and test/
+    ├── .cursor/skills/              # nine repo-authored skills
     ├── .claude/skills -> ../.cursor/skills
-    └── .github/
-        ├── workflows/                  # memory.yml (advisory) · delivery.yml (requirable)
-        ├── ISSUE_TEMPLATE/
-        ├── pull_request_template.md
-        └── CODEOWNERS
+    └── .github/                     # memory.yml (advisory) · delivery.yml (requirable)
 ```
+
+For Claude.ai, which cannot install from a CLI,
+`scripts/package-claude-web-skills.sh` builds one ZIP per skill.
 
 ## Design notes
 
-- **Upstream owns the craft** (grill, TDD, review axes, the debugging loop). **The
-  target repo owns placement** (the `Stage:` line, the paths, the test commands). The
-  ADR-shaped write-up of that split is ADR 0016 in
-  [`friofry/starcraft-benchmark`](https://github.com/friofry/starcraft-benchmark).
-- **One entry point per stage.** Where this repo drives a stage, the upstream skill
-  that used to drive it is not vendored. Two skills that both claim `plan` is how an
-  agent picks the wrong one, and `disable-model-invocation` only hides the symptom.
-- **Projections are computed, not committed.** The graph and packets print to stdout;
-  `build/` is gitignored. There is therefore no stale-generated-file failure mode —
-  the only way for the graph to be wrong is for the node headers to be wrong, which
-  `check-memory.sh` already checks.
-- **One parser per fact.** One resolver for addresses, one reader for node headers.
-  Four header readers existed once and only one of them skipped fenced code blocks,
-  so a spec quoting an *example* header made three scripts read the example.
-- **Local markdown is the writable truth; GitHub Issues are intake.** Two writable
-  stores mean an unbounded reconciliation problem with no correct answer. The two
-  layers meet once, at the pull request.
-- **Addresses are derived from paths, never stored.** An address that is stored can
-  disagree with the file it names; one that is derived cannot.
-- **v1 installs stay green.** Every new structural requirement lives behind
-  `check-memory.sh --strict`, so a repository that predates node headers keeps
-  passing a default run. `/update-git-memory` migrates it when its owner is ready.
-- **Vendored skill bytes are pinned** in `.agents/skills.sha256` after install, so a
-  local edit fails the checker instead of vanishing on the next `npx skills update`.
-- **Empty product folders stay thin on purpose** — see the growth rule in
-  [`scaffold/docs/memory.md`](scaffold/docs/memory.md).
+**The scripts live in the project's `.git-memory-scripts/`, not inside a skills directory.**
+They are not agent-private: `.github/workflows/` runs `check-memory.sh`, and a
+human runs `git-memory-progress.sh` to see where a feature stands. Put them under
+`.cursor/skills/` and CI depends on a skills folder; put them under
+`.agents/skills/` and they land in vendored, byte-pinned territory where an edit
+fails the checker. The cost is honest: on a project that already has a
+`.git-memory-scripts/`, these six files land beside yours. They all begin `git-memory-` apart
+from `check-memory.sh`, and the installer never overwrites an existing file.
+
+**One home per fact.** Everything else follows from this. The graph and packets
+print to stdout and are never committed, because a committed projection is a
+second copy that goes stale the first time someone edits a `Refs:` line. Removing
+the failure mode beats adding a check for it.
+
+**One parser per fact.** One resolver for addresses, one reader for node headers.
+Four header readers existed once and only one skipped fenced code blocks, so a
+spec quoting an *example* header made three scripts read the example.
+
+**Addresses are derived, never stored.** A stored address can disagree with the
+file it names. A derived one cannot.
+
+**Owner is derived from stage.** Write `Owner:` into a file and you have given a
+fact a second home; move the stage and the two disagree with nothing to break the
+tie.
+
+**Local markdown is writable truth; GitHub Issues are intake.** Two writable
+stores is an unbounded reconciliation problem with no correct answer. The layers
+meet once, at the pull request.
+
+**A skipped job reports success.** `delivery.yml` has no path filter for exactly
+this reason — a path-filtered required check passes on the changes it was never
+allowed to inspect.
+
+**v1 installs stay green.** Every v2 requirement is behind `--strict`.
+
+**What this does not protect against.** Writing a spec to have written a spec.
+Four files, empty of substance, an `acceptance.md` reading "works correctly" —
+that passes every check and buys nothing. The method gives thinking a shape to
+land in. It cannot make anyone think.

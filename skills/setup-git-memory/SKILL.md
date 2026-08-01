@@ -16,7 +16,7 @@ What lands, in layers:
 | Memory map | `docs/memory.md`, `CONTEXT.md`, `docs/adr/`, `specs/`, `.scratch/` | Where each fact lives, and the one-home rule |
 | Delivery | `docs/agents/delivery-workflow.md` | The 12 stages and the `Stage:` line |
 | Method | `docs/method/` + `docs/method/boilerplates/` | Types, addresses, gates, packet profiles, `M:` refs |
-| Tools | `scripts/check-memory.sh`, `git-memory-resolve.sh`, `git-memory-graph.sh`, `git-memory-packet.sh`, `scripts/test/` | Resolution, projection, enforcement |
+| Tools | `.git-memory-scripts/check-memory.sh`, `git-memory-resolve.sh`, `git-memory-graph.sh`, `git-memory-packet.sh`, `git-memory-progress.sh`, `.git-memory-scripts/lib/`, `.git-memory-scripts/test/` | Resolution, projection, enforcement |
 | Skills | `.cursor/skills/` (repo-authored) · `.agents/skills/` (vendored Matt) | Repeatable procedures |
 | GitHub | `.github/workflows/`, `.github/ISSUE_TEMPLATE/`, `pull_request_template.md`, `CODEOWNERS` | Intake and the checks that block a merge |
 
@@ -70,7 +70,7 @@ six packet profiles, and the boilerplates that stop process prose from being pas
 into `CONTEXT.md`. Decline it only if the user already runs a documented method they
 do not intend to replace — and say plainly that without it, `Type:`, `Refs:` and
 every `M:` address in the shipped skills resolve to nothing, so
-`./scripts/check-memory.sh` will fail on the first node header written.
+`./.git-memory-scripts/check-memory.sh` will fail on the first node header written.
 
 **C — GitHub intake layer (`.github/`).** Recommended: **yes**, separately.
 
@@ -109,7 +109,7 @@ prove it. Wait for approval. Do not start writing while a question is open.
 ## 4. Write
 
 1. Copy the missing paths from `scaffold/` into the target root: `docs/`,
-   `templates/`, `scripts/`, `.cursor/skills/`, `specs/README.md`, `.scratch/README.md`,
+   `templates/`, `.git-memory-scripts/`, `.cursor/skills/`, `specs/README.md`, `.scratch/README.md`,
    `rules/README.md`, and `.github/` if the user took it in step 2C.
 2. Merge `.gitignore`: the `.scratch/` re-include lines and `build/`. `build/` is
    where the graph and packet projections get redirected, and a committed projection
@@ -122,7 +122,7 @@ prove it. Wait for approval. Do not start writing while a question is open.
 5. **Human direction is `active-context.md` at the repo root**, seeded from
    `templates/active-context.md`. Never create a root `context.md`: on macOS and
    Windows it is the same path as `CONTEXT.md`, one silently clobbers the other on
-   checkout, and `./scripts/check-memory.sh` fails on it by design. If exploration
+   checkout, and `./.git-memory-scripts/check-memory.sh` fails on it by design. If exploration
    found a root `context.md`, run `git mv context.md active-context.md` and say so.
 6. Install the Matt skills for the chosen set:
 
@@ -147,14 +147,14 @@ prove it. Wait for approval. Do not start writing while a question is open.
    absent after copying, this command is what creates it. Where the filesystem
    refuses links at all (Windows without Developer Mode), copy `.cursor/skills`
    to `.claude/skills` instead and say so in the report:
-   `./scripts/check-memory.sh` accepts a copy and tells the owner when the two
+   `./.git-memory-scripts/check-memory.sh` accepts a copy and tells the owner when the two
    sides stop matching.
 
 8. Make the tool layer executable and record the vendored bytes:
 
    ```bash
-   chmod +x scripts/*.sh scripts/test/*.sh
-   ./scripts/check-memory.sh --fix
+   chmod +x .git-memory-scripts/*.sh .git-memory-scripts/test/*.sh
+   ./.git-memory-scripts/check-memory.sh --fix
    ```
 
 ## 5. Prove the tooling in this environment
@@ -163,7 +163,7 @@ The scripts are `bash` and portable by policy, but the environment is the thing 
 cannot read off a file. Run the harness once, here, before reporting success:
 
 ```bash
-./scripts/test/run-tests.sh
+./.git-memory-scripts/test/run-tests.sh
 ```
 
 It builds throwaway fixture repositories under `mktemp -d`, exercises the resolver,
@@ -174,9 +174,9 @@ with a final count. It writes nothing into the project and finishes in under
 Then confirm the three tools answer on this repository, not only on fixtures:
 
 ```bash
-./scripts/git-memory-resolve.sh M:gate-approval   # prints docs/method/gates.md#...
-./scripts/git-memory-graph.sh --format md         # prints; nothing is written
-./scripts/check-memory.sh                         # must exit 0
+./.git-memory-scripts/git-memory-resolve.sh M:gate-approval   # prints docs/method/gates.md#...
+./.git-memory-scripts/git-memory-graph.sh --format md         # prints; nothing is written
+./.git-memory-scripts/check-memory.sh                         # must exit 0
 ```
 
 If `run-tests.sh` reports a failure, **stop and report the failing line verbatim**.
@@ -184,7 +184,7 @@ Do not edit the harness, do not skip the check, and do not report the install as
 complete. A tool layer that does not run here is a set of commands the project's
 documentation now promises and cannot deliver.
 
-`./scripts/check-memory.sh --strict` is a report, not a gate, on a repository whose
+`./.git-memory-scripts/check-memory.sh --strict` is a report, not a gate, on a repository whose
 specs predate this install. Run it once, show the warnings, and leave them.
 
 ## 6. Report
@@ -200,7 +200,7 @@ Tell the user, in this order:
   freshly installed skill can be invoked
 - How to refresh later: `npx skills@latest add friofry/git-memory -s update-git-memory
   -a universal -y`, then `/update-git-memory`; and
-  `npx skills@latest update && ./scripts/check-memory.sh --fix` for the Matt skills
+  `npx skills@latest update && ./.git-memory-scripts/check-memory.sh --fix` for the Matt skills
 
 Then list **what is still theirs to fill**. Nothing below can be inferred from the
 repository, and every item is a control that reads as though it works until someone

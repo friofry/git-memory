@@ -36,7 +36,7 @@ Read the method layer **by address, not by file**. It is around 20k tokens whole
 and any one thing you need from it is a few hundred:
 
 ```bash
-./scripts/git-memory-resolve.sh --print M:gate-approval
+./.git-memory-scripts/git-memory-resolve.sh --print M:gate-approval
 ```
 
 That prints the section and stops at the next heading of the same level. Opening
@@ -44,7 +44,7 @@ That prints the section and stops at the next heading of the same level. Opening
 words, and does it again on every citation.
 
 Likewise, before a long turn take the stage's packet rather than reading the
-feature's four files: `./scripts/git-memory-packet.sh <address> <stage>` is about
+feature's four files: `./.git-memory-scripts/git-memory-packet.sh <address> <stage>` is about
 an eighth of the same content, chosen for that stage.
 
 ## Hard constraints
@@ -58,14 +58,14 @@ an eighth of the same content, chosen for that stage.
 Run what applies for this repo (fill in after setup):
 
 ```bash
-# ./scripts/check-memory.sh
+# ./.git-memory-scripts/check-memory.sh
 # <project test commands>
 ```
 
 Update memory when facts or decisions changed (`CONTEXT.md`, ADR, active `specs/.../decisions.md`), then run:
 
 ```bash
-./scripts/check-memory.sh
+./.git-memory-scripts/check-memory.sh
 ```
 
 ## Needs human approval
