@@ -29,6 +29,68 @@ wrong one. The table is in
 [`matt-skill-sets.txt`](matt-skill-sets.txt), "Not vendored, because this repository
 owns the stage".
 
+## Packets — the part to understand first
+
+Every session, someone decides what the agent should be told. Do it by hand and
+you either paste the whole feature and bury the one thing that matters, or paste
+too little and get code written against a contract the agent never saw.
+
+A **packet** is that decision, generated. It is the context envelope for **one
+turn, at one stage** — not "the feature", but what this stage needs from it.
+
+```bash
+./scripts/git-memory-packet.sh T:012/03 build
+```
+
+Six layers exist. A **profile** is which of them a stage carries:
+
+| Layer | Carries |
+|-------|---------|
+| Route | which node, which stage, what you are being asked to do |
+| Objective | the outcome in one sentence |
+| Contract | acceptance scenarios, scope, rules the change must obey |
+| Memory | glossary terms and ADRs the feature touches |
+| Slice | the ticket under work, the queue, the commands, what changed |
+| Evidence | command output, review artifacts, CI |
+
+`build` carries Route, Contract and Slice — and **deliberately drops the
+glossary**, because a builder implementing one ticket does not need the domain
+vocabulary competing for attention. `review` puts Memory and Evidence back,
+because a reviewer without architecture context reviews syntax.
+
+An omitted layer is still named, with its reason, so a reader can tell *empty*
+from *never requested*:
+
+```
+- Included layers: Route, Contract, Slice
+- Omitted layers: Objective, Memory, Evidence
+- Size: 2831 bytes, ~707 tokens (estimated as bytes / 4), no --budget
+
+## Memory
+
+Memory: omitted (build profile). The layer is not missing — the profile leaves
+it out to buy the reader's attention for the layers above (M:packet-build).
+```
+
+**Why it is worth the trouble.** A `build` packet is about **1.3k tokens**.
+Reading the same feature's four files plus its tickets, `docs/memory.md` and the
+workflow is **8.2k** — six times the context for the same turn, most of it about
+stages you are not on.
+
+**The one profile that is expensive on purpose** is `approval`, at 2.5k: it
+quotes all four spec files *in full*. A human who approves a summary approved the
+summary. Do not compress that one.
+
+`--budget N` caps a packet at roughly N tokens, truncating the lowest-priority
+layer *within itself* and saying by how much. A layer the profile marks required
+is never dropped. Use it for a long turn on a large feature, not as a default —
+a truncated packet looks like a complete one.
+
+Packets print to stdout and are **never committed**. A committed projection is a
+second copy of facts the node headers already carry, and it goes stale the first
+time someone edits a `Refs:` line. The full profile table is
+[`scaffold/docs/method/packet-profiles.md`](scaffold/docs/method/packet-profiles.md).
+
 ## What you get
 
 | Piece | Role |
@@ -211,20 +273,9 @@ worked examples: [`scaffold/docs/method/addressing.md`](scaffold/docs/method/add
 
 ### Packets
 
-A packet is the context envelope assembled for one agent turn at one stage, from six
-layers — Route, Objective, Contract, Memory, Slice, Evidence — of which the stage's
-profile keeps only some. A `build` packet carries Route, Contract and Slice and
-deliberately omits the glossary; a `review` packet adds Memory and Evidence back,
-because a reviewer without architecture context reviews syntax.
-
-```bash
-./scripts/git-memory-packet.sh F:007-auth-envelope build
-```
-
-Packets and the work graph print to stdout and are never committed. A committed
-projection is a second copy of facts the node headers already carry, and the second
-copy goes stale the first time someone edits a `Refs:` line. The profile table is
-[`scaffold/docs/method/packet-profiles.md`](scaffold/docs/method/packet-profiles.md).
+Explained in full under **Packets — the part to understand first**, above. In one
+line: the stage's profile decides which of the six layers this turn is given, the
+result prints to stdout, and nothing is committed.
 
 ### Gates
 
@@ -294,7 +345,10 @@ Artifacts land in `dist/claude-web/`:
 
 `setup-git-memory.zip` is only the installer — it embeds `scaffold/`, including the
 scripts and the test harness, because in this channel there is no clone to copy bytes
-from. The craft skills and the other repo skills are **sibling** ZIPs in the same
+from. It deliberately does **not** carry `.claude/skills`: that is a symbolic link in
+the repository, and zip stores what a link points at, so shipping it would put a
+second full copy of every repo skill in the archive. The installer recreates the link
+with one command (`ln -sfn ../.cursor/skills .claude/skills`). The craft skills and the other repo skills are **sibling** ZIPs in the same
 `skills/` folder, not inside that archive. The script fails with a count error rather
 than leaving one ZIP behind.
 

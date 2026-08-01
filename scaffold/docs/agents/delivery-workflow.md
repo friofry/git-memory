@@ -140,11 +140,11 @@ remember.
 |-------|-------------|-------|
 | *(any stage, before a long turn)* | [`../../.cursor/skills/prepare-packet/`](../../.cursor/skills/prepare-packet/) — prints this stage's packet | — |
 | `request` | Human | — |
-| `research` | `../../.agents/skills/research/` | `../../.agents/skills/grilling/`, `../../.agents/skills/prototype/` for a timeboxed question |
-| `spec` | [`../../.cursor/skills/create-feature-spec/`](../../.cursor/skills/create-feature-spec/) | `../../.agents/skills/to-spec/`, `../../.agents/skills/codebase-design/` for the seams |
+| `research` | `../../.agents/skills/research/` | `../../.agents/skills/grilling/`, `../../.agents/skills/prototype/` for a timeboxed question; `../../.agents/skills/wayfinder/` when the shape of the work is still fog |
+| `spec` | [`../../.cursor/skills/create-feature-spec/`](../../.cursor/skills/create-feature-spec/) | `../../.agents/skills/grill-with-docs/` to interrogate the outcome and write the ADR and glossary entries as it goes; `../../.agents/skills/codebase-design/` for the seams |
 | `approval` | Human | `../../.agents/skills/grill-with-docs/`, `../../.agents/skills/domain-modeling/` — ADR and glossary as it goes |
 | `plan` | [`../../.cursor/skills/plan-feature/`](../../.cursor/skills/plan-feature/) | `../../.agents/skills/wayfinder/` when the effort outgrows one session |
-| `build` | [`../../.cursor/skills/implement-feature/`](../../.cursor/skills/implement-feature/) | `../../.agents/skills/implement/`, `../../.agents/skills/tdd/`, `../../.agents/skills/codebase-design/` |
+| `build` | [`../../.cursor/skills/implement-feature/`](../../.cursor/skills/implement-feature/) | `../../.agents/skills/tdd/`, `../../.agents/skills/codebase-design/` |
 | `checks` | The commands in [`../../AGENTS.md`](../../AGENTS.md) | `../../.agents/skills/tdd/` |
 | `review` | [`../../.cursor/skills/review-change/`](../../.cursor/skills/review-change/), [`../../.cursor/skills/review-architecture/`](../../.cursor/skills/review-architecture/) | `../../.agents/skills/code-review/` — Standards and Spec axes |
 | `rework` | [`../../.cursor/skills/implement-feature/`](../../.cursor/skills/implement-feature/) | `../../.agents/skills/diagnosing-bugs/` |
@@ -154,7 +154,7 @@ remember.
 
 Four vendored skills sit outside the chain:
 `../../.agents/skills/resolving-merge-conflicts/` for
-a conflicted merge, `../../.agents/skills/handoff/` when a session ends
+a conflicted merge, `M:handoff-pr` when a session ends
 mid-stage, `../../.agents/skills/improve-codebase-architecture/`
 as a periodic scan whose recommendation enters the chain as a new `request`, and
 `../../.agents/skills/writing-great-skills/` when editing a

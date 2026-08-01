@@ -41,7 +41,7 @@ contract inside a build turn.
 ## 2. Confirm the gate, then claim by address
 
 1. Confirm `Stage:` is past `approval`. If no ticket queue exists, publish one with
-   `.agents/skills/to-tickets/` under `Stage: plan`, then set `Stage: build` when
+   [`../plan-feature/`](../plan-feature/) under `Stage: plan`, then set `Stage: build` when
    work starts —
    [`../../../docs/agents/delivery-workflow.md`](../../../docs/agents/delivery-workflow.md).
 2. **Check `Blocked by:` before claiming.** A ticket is unblocked only when every
@@ -81,7 +81,7 @@ other four skeletons and which type takes which are in
 address on the ticket's `Refs:` line; do not paste the skeleton's prose.
 
 1. Implement the smallest slice that advances one acceptance scenario.
-   `.agents/skills/implement/` is the craft; this skill is the repository wiring.
+   `.agents/skills/tdd/` is the craft; this skill is the repository wiring.
 2. Write the test for that scenario first when the behaviour is crisp — the
    red-green loop in `.agents/skills/tdd/`. Reach for `.agents/skills/diagnosing-bugs/`
    when a slice or a review finding turns into a real defect and there is no tight

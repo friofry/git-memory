@@ -212,7 +212,12 @@ parse_args() {
 # script learning what an address looks like.
 
 resolve_node() {
-  local index row
+  # index is deliberately NOT local: feature_children() and index_family() read
+  # it after this function returns, which is the whole point of walking --all
+  # once. Declaring it local emptied it on return, so every packet reported an
+  # empty ticket queue and lost the TERM: and ADR: families from Memory — while
+  # set -u turned the read into a diagnostic on stderr that the render survived.
+  local row
   [ -f "$resolver" ] || die \
     "$resolver is missing" \
     "this script resolves every address through it and parses none itself" \
