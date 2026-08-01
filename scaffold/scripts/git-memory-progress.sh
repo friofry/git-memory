@@ -7,6 +7,7 @@
 #   scripts/git-memory-progress.sh --all            include implemented features
 #   scripts/git-memory-progress.sh --format json
 #   scripts/git-memory-progress.sh --strict         exit 1 on a claimed-but-unproven stage
+#   scripts/git-memory-progress.sh --cheatsheet     one line per stage: what drives it
 #   scripts/git-memory-progress.sh --help           usage, exit 0
 #
 # Two independent signals per stage, and the point of the script is where they
@@ -36,6 +37,7 @@ self=$(basename "$0")
 format=text
 want_all=0
 strict=0
+sheet=0
 address=""
 
 # The twelve stages in order. docs/agents/delivery-workflow.md owns the
@@ -57,6 +59,11 @@ evidence in the repository rather than from the Stage: line alone.
   --format    text (default), md for a task list you can paste into an issue, or
               json for another tool to read.
   --strict    exit 1 if any stage is claimed but unproven. Use it in CI.
+  --cheatsheet  one line per stage — the skill that drives it, or the action
+              expected of you where no skill applies — and what "done" means
+              there. Combine with an address to mark the stage you are on. The
+              table is read out of docs/agents/delivery-workflow.md, so it can
+              never disagree with the workflow it describes.
 
 Boxes:
 
@@ -102,6 +109,7 @@ while [ "$#" -gt 0 ]; do
     -h|--help) usage; exit 0 ;;
     --all)     want_all=1 ;;
     --strict)  strict=1 ;;
+    --cheatsheet) sheet=1 ;;
     --format)
       [ "$#" -ge 2 ] || die "--format needs a value" "expected: --format text|md|json"
       format=$2; shift ;;
@@ -199,6 +207,87 @@ json_escape() {
   '
 }
 
+# --- the cheatsheet ------------------------------------------------------------
+# One line per stage: what drives it, and what "done" means there.
+#
+# Parsed out of docs/agents/delivery-workflow.md rather than written here. That
+# doc owns both tables — "Stages" and "Which skill performs which stage" — and a
+# copy of them inside a script is a second home that goes stale the first time a
+# stage's entry point changes. If the parse finds nothing, that is a real failure
+# and it says so rather than printing a plausible table from memory.
+
+cheatsheet() { # optional: the stage to mark as current
+  local doc=docs/agents/delivery-workflow.md current=${1:-} out
+  [ -r "$doc" ] || die "cannot read $doc" \
+    "the cheatsheet is a projection of that file's tables, not a second copy of them"
+
+  out=$(awk -v order="$stages" -v current="$current" -v mark="$c_now" -v dim="$c_dim" -v off="$c_off" '
+    function trim(s) { gsub(/^[ \t]+/, "", s); gsub(/[ \t]+$/, "", s); return s }
+    function unbacktick(s) { gsub(/`/, "", s); return trim(s) }
+
+    # Prose out of a table cell: link targets dropped, backticks and relative
+    # path noise removed. The doc writes "[`../../AGENTS.md`](../../AGENTS.md)"
+    # because it is a document; a terminal wants "AGENTS.md".
+    function prose(s) {
+      gsub(/\]\([^)]*\)/, "", s)
+      gsub(/[][]/, "", s)
+      gsub(/`/, "", s)
+      gsub(/\.\.\//, "", s)
+      return trim(s)
+    }
+
+    # A cell like "[`../../.cursor/skills/review-change/`](…), [`…/review-architecture/`](…)"
+    # becomes "/review-change, /review-architecture". A cell with no skill path is
+    # prose and is kept as written, minus the markdown.
+    function shorten(s,   res, n, name) {
+      gsub(/\]\([^)]*\)/, "", s)          # drop link targets, keep link text
+      gsub(/\[/, "", s)
+      s = trim(s)
+      sub(/ +[-—] .*$/, "", s)            # drop the trailing " — explanation"
+      res = ""
+      while (match(s, /skills\/[A-Za-z0-9_-]+\//)) {
+        name = substr(s, RSTART + 7, RLENGTH - 8)
+        res = res (res == "" ? "" : ", ") "/" name
+        s = substr(s, RSTART + RLENGTH)
+      }
+      if (res != "") return res
+      s = prose(s)
+      if (s == "Human") return "you (human gate)"
+      if (s == "GitHub Actions") return "GitHub Actions"
+      if (s ~ /^The commands in /) return "AGENTS.md commands"
+      if (s ~ /^The skill that changed/) return "whichever skill changed it"
+      return s
+    }
+
+    BEGIN { FS = "|" }
+    /^\| *# *\| *.Stage:. *\| *Owner *\| *Done when/ { t = 1; next }
+    /^\| *Stage *\| *Entry point *\| *Craft/         { t = 2; next }
+    /^\|[ :|-]+\|$/                                  { next }
+    /^ *$/                                           { t = 0 }
+    t == 1 && NF >= 6 { done[unbacktick($3)] = prose($5) }
+    t == 2 && NF >= 4 { entry[unbacktick($2)] = shorten($3) }
+
+    END {
+      n = split(order, st, " ")
+      for (i = 1; i <= n; i++) {
+        s = st[i]
+        if (!(s in entry) && !(s in done)) continue
+        found++
+        pre = (s == current) ? mark "->" : "  "
+        suf = (s == current) ? off : ""
+        printf "%s %-11s %-26s %s%s%s\n", pre, s, (s in entry ? entry[s] : "?"), dim, (s in done ? done[s] : ""), off suf
+      }
+      exit (found ? 0 : 1)
+    }
+  ' "$doc") || die "found no stage table in $doc" \
+    "expected the 'Stages' and 'Which skill performs which stage' tables; has the file been reshaped?"
+
+  printf '%sSTAGE       ENTRY POINT                DONE WHEN%s\n' "$c_hd" "$c_off"
+  printf '%s\n' "$out"
+  printf '\n%sBefore any long turn, at any stage: /prepare-packet%s\n' "$c_dim" "$c_off"
+  printf '%sSource: %s — edit the tables there, never this output.%s\n' "$c_dim" "$doc" "$c_off"
+}
+
 # --- evidence per stage --------------------------------------------------------
 # Sets ev_state (done|none|skip|external) and ev_note. One function so the twelve
 # rules sit together and can be read as a table; splitting them across the
@@ -212,19 +301,19 @@ evidence_for() { # stage, dir, slug
   case "$st" in
     request)
       if section_filled "$d/spec.md" Outcome; then
-        ev_state=done; ev_note="исход сформулирован в spec.md"
+        ev_state=done; ev_note="outcome written in spec.md"
       else
-        ev_note="в spec.md пуст раздел ## Outcome"
+        ev_note="spec.md has an empty ## Outcome section"
       fi
       ;;
     research)
       n=$(count_glob "spikes/$slug"/*/)
       if [ "$n" -gt 0 ]; then
-        ev_state=done; ev_note="спайков: $n"
+        ev_state=done; ev_note="spikes: $n"
       elif section_filled "$d/spec.md" Unknown; then
-        ev_note="в spec.md остались Unknown, спайка нет"
+        ev_note="spec.md still lists Unknowns and there is no spike"
       else
-        ev_state=skip; ev_note="неизвестных не осталось, стадия не понадобилась"
+        ev_state=skip; ev_note="no unknowns left, stage not needed"
       fi
       ;;
     spec)
@@ -233,24 +322,24 @@ evidence_for() { # stage, dir, slug
         file_filled "$d/$f.md" && n=$((n + 1))
       done
       if [ "$n" -eq 4 ]; then
-        ev_state=done; ev_note="все четыре файла заполнены"
+        ev_state=done; ev_note="all four files filled in"
       else
-        ev_note="заполнено файлов: $n из 4"
+        ev_note="files filled in: $n of 4"
       fi
       ;;
     approval)
       if [ -n "$(gm_header "$d/decisions.md" Approved)" ]; then
         ev_state=done; ev_note="Approved: $(gm_header "$d/decisions.md" Approved)"
       else
-        ev_note="в decisions.md нет строки Approved:"
+        ev_note="no Approved: line in decisions.md"
       fi
       ;;
     plan)
       n=$(count_glob ".scratch/$slug/issues"/*.md)
       if [ "$n" -gt 0 ]; then
-        ev_state=done; ev_note="тикетов: $n"
+        ev_state=done; ev_note="tickets: $n"
       else
-        ev_note="в .scratch/$slug/issues/ нет тикетов"
+        ev_note="no tickets under .scratch/$slug/issues/"
       fi
       ;;
     build)
@@ -259,28 +348,28 @@ evidence_for() { # stage, dir, slug
         [ "$(gm_header "$f" Status)" = done ] && n=$((n + 1))
       done
       if [ "$n" -gt 0 ]; then
-        ev_state=done; ev_note="закрытых тикетов: $n"
+        ev_state=done; ev_note="tickets at Status: done: $n"
       elif [ -n "$(gm_header "$d/spec.md" "Implemented in")" ]; then
-        ev_state=done; ev_note="есть Implemented in:"
+        ev_state=done; ev_note="an Implemented in: line is present"
       else
-        ev_note="ни один тикет не в Status: done"
+        ev_note="no ticket is at Status: done"
       fi
       ;;
     checks)
       for f in ".scratch/$slug/reviews"/*.md; do
         if section_filled "$f" "Commands run"; then
-          ev_state=done; ev_note="вывод команд сохранён в $(basename "$f")"
+          ev_state=done; ev_note="command output kept in $(basename "$f")"
           break
         fi
       done
-      [ "$ev_state" = done ] || ev_note="ни в одном ревью не заполнен ## Commands run"
+      [ "$ev_state" = done ] || ev_note="no review artifact fills in ## Commands run"
       ;;
     review)
       n=$(count_glob ".scratch/$slug/reviews"/*.md)
       if [ "$n" -gt 0 ]; then
-        ev_state=done; ev_note="артефактов ревью: $n"
+        ev_state=done; ev_note="review artifacts: $n"
       else
-        ev_note="в .scratch/$slug/reviews/ пусто"
+        ev_note=".scratch/$slug/reviews/ is empty"
       fi
       ;;
     rework)
@@ -292,25 +381,25 @@ evidence_for() { # stage, dir, slug
         [ -n "$body" ] && n=$((n + 1))
       done
       if [ "$(count_glob ".scratch/$slug/reviews"/*.md)" -eq 0 ]; then
-        ev_note="ревью ещё не было"
+        ev_note="no review yet"
       elif [ "$n" -eq 0 ]; then
-        ev_state=done; ev_note="блокирующих замечаний не осталось"
+        ev_state=done; ev_note="no blocking findings left open"
       else
-        ev_note="ревью с открытыми блокирующими: $n"
+        ev_note="reviews with open blocking findings: $n"
       fi
       ;;
     ci)
       if [ -n "$(gm_header "$d/spec.md" "Implemented in")" ]; then
-        ev_state=external; ev_note="Implemented in: $(gm_header "$d/spec.md" "Implemented in") — статус прогона вне репозитория"
+        ev_state=external; ev_note="Implemented in: $(gm_header "$d/spec.md" "Implemented in") — the run status lives outside the repository"
       else
-        ev_note="нет Implemented in:, назвать прогон нечем"
+        ev_note="no Implemented in:, nothing to name the run"
       fi
       ;;
     acceptance)
       if [ -n "$(gm_header "$d/acceptance.md" Verdict)" ]; then
         ev_state=done; ev_note="Verdict: $(gm_header "$d/acceptance.md" Verdict)"
       else
-        ev_note="в acceptance.md нет строки Verdict:"
+        ev_note="no Verdict: line in acceptance.md"
       fi
       ;;
     memory)
@@ -318,7 +407,7 @@ evidence_for() { # stage, dir, slug
          [ -n "$(gm_header "$d/spec.md" "Implemented in")" ]; then
         ev_state=done; ev_note="implemented, $(gm_header "$d/spec.md" "Implemented in")"
       else
-        ev_note="ещё не Status: implemented с Implemented in:"
+        ev_note="not yet Status: implemented with an Implemented in: line"
       fi
       ;;
   esac
@@ -341,12 +430,12 @@ report_feature() { # dir
 
   case "$format" in
     text)
-      printf '%s%s%s  %s\n' "$c_hd" "$addr" "$c_off" "${title:-без заголовка}"
+      printf '%s%s%s  %s\n' "$c_hd" "$addr" "$c_off" "${title:-untitled}"
       printf '%sStage: %s · Status: %s · %s%s\n\n' \
         "$c_dim" "${stage:-—}" "${status:-—}" "$d/" "$c_off"
       ;;
     md)
-      printf '### %s — %s\n\n' "$addr" "${title:-без заголовка}"
+      printf '### %s — %s\n\n' "$addr" "${title:-untitled}"
       printf '`Stage: %s` · `Status: %s`\n\n' "${stage:-—}" "${status:-—}"
       ;;
   esac
@@ -363,7 +452,7 @@ report_feature() { # dir
     # position vs evidence — the whole point of the script
     if [ "$here" -lt 0 ]; then
       box="?"; colour=$c_dim
-      note="стадия '$stage' не из словаря — свидетельство не сопоставлено"
+      note="stage '$stage' is not in the vocabulary; evidence not matched"
     elif [ "$i" -eq "$here" ]; then
       box=">"; colour=$c_now
     elif [ "$i" -gt "$here" ]; then
@@ -391,8 +480,8 @@ report_feature() { # dir
       md)
         case "$box" in
           x) printf -- '- [x] **%s** — %s\n' "$st" "$note" ;;
-          '!') printf -- '- [ ] **%s** ⚠️ пройдена без свидетельства — %s\n' "$st" "$note" ;;
-          '>') printf -- '- [ ] **%s** ← текущая%s\n' "$st" "${note:+ — $note}" ;;
+          '!') printf -- '- [ ] **%s** ⚠️ passed with no evidence — %s\n' "$st" "$note" ;;
+          '>') printf -- '- [ ] **%s** <- current%s\n' "$st" "${note:+ — $note}" ;;
           -) printf -- '- [x] ~~%s~~ — %s\n' "$st" "$note" ;;
           # Quoted: a bare ? in a case pattern is a single-character glob and
           # would swallow every other box, including the empty one.
@@ -415,6 +504,13 @@ report_feature() { # dir
     json) printf ']}' ;;
   esac
 }
+
+# --- cheatsheet, alone or above the checklist ----------------------------------
+
+if [ "$sheet" -eq 1 ] && [ -z "$address" ]; then
+  cheatsheet
+  exit 0
+fi
 
 # --- selection -----------------------------------------------------------------
 
@@ -455,12 +551,24 @@ fi
 if [ -z "${dirs// /}" ]; then
   case "$format" in
     json) printf '{"features":[]}\n' ;;
-    *)    printf 'Активных фич нет. Всё, что есть в specs/, доведено до stage memory.\n' ;;
+    *)    printf 'No unfinished features. Everything in specs/ has reached stage memory.\n' ;;
   esac
   exit 0
 fi
 
 # --- print ---------------------------------------------------------------------
+
+# --cheatsheet with an address: the same table, with an arrow on the stage that
+# feature is actually on. Documented in --help, so it has to behave that way.
+if [ "$sheet" -eq 1 ]; then
+  cur=""
+  for d in $dirs; do
+    cur=$(gm_header "${d%/}/spec.md" Stage)
+    break
+  done
+  cheatsheet "$cur"
+  exit 0
+fi
 
 [ "$format" = json ] && printf '{"features":[\n'
 first=1
@@ -474,7 +582,7 @@ done
 [ "$format" = json ] && printf '\n]}\n'
 
 if [ "$format" = text ] && [ "$gaps" -gt 0 ]; then
-  printf '%s%d стади(й) пройдено без свидетельства — строки с [!]%s\n' "$c_gap" "$gaps" "$c_off"
+  printf '%s%d stage(s) passed with no evidence - the [!] lines%s\n' "$c_gap" "$gaps" "$c_off"
 fi
 
 [ "$strict" -eq 1 ] && [ "$gaps" -gt 0 ] && exit 1
