@@ -31,12 +31,15 @@ Detect v1: `docs/method/` is absent, or `scripts/git-memory-resolve.sh` is.
 
 | Path | What it is |
 |------|------------|
+| `scripts/lib/git-memory-lib.sh` | **Copy this first.** The only node-header reader. Every script sources it and exits 2 when it is missing, so a migration that takes `check-memory.sh` without it leaves a repository where nothing runs |
 | `docs/method/` and `docs/method/boilerplates/` | Method truth: work types, addressing, gates, packet profiles, ticket and review skeletons |
 | `scripts/git-memory-resolve.sh` | The only address parser in the system |
 | `scripts/git-memory-graph.sh` | The work graph, printed to stdout |
 | `scripts/git-memory-packet.sh` | The per-stage context envelope, printed to stdout |
 | `scripts/test/run-tests.sh` | Fixture-based harness for all four scripts |
 | `.cursor/skills/prepare-packet/` | Assembles the packet before a long turn |
+| `.cursor/skills/plan-feature/` | Cuts an approved feature into tickets against its acceptance scenarios. Replaces upstream `/to-tickets` as the `plan` entry point |
+| `CLAUDE.md` and `.claude/skills` | Claude Code support. `CLAUDE.md` is a pointer to `AGENTS.md` and carries no commands of its own; `.claude/skills` is a **symbolic link** to `.cursor/skills`, not a copy. Create it with `ln -sfn ../.cursor/skills .claude/skills`, and skip both if the project has no Claude Code users |
 | `docs/agents/github-gates.md` | Which GitHub mechanism enforces which gate |
 | `.github/workflows/delivery.yml` | The unfiltered workflow you make a required check |
 | `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `.github/CODEOWNERS` | Intake and handoff forms |
@@ -84,6 +87,17 @@ nothing.
 4. **Whether the Matt skills are refreshed in the same update.** Usually a separate
    change; a vendored-byte refresh and a scaffold merge in one diff are hard to
    review.
+5. **Whether to remove the six skills v2 no longer vendors.** `to-spec`,
+   `to-tickets`, `implement`, `triage`, `handoff` and the frontier half of
+   `wayfinder` were entry points for stages this scaffold now drives itself
+   (`matt-skill-sets.txt`, "Not vendored, because this repository owns the
+   stage"). **Leaving them installed breaks nothing** — they keep working, and
+   `check-memory.sh` does not care. The cost is two skills claiming one stage,
+   which is how an agent picks the wrong one.
+   Removing them is safe only once `plan-feature` is in place, because
+   `/to-tickets` is the v1 `plan` entry point. Propose it as a follow-up, never
+   fold it into the same diff as the scaffold merge, and do not remove a skill
+   the project has a local reason to keep.
 
 State the migration as a plan in step 3 and get each of these four answered before
 writing.
@@ -167,10 +181,16 @@ npx skills@latest update
 Run, in this order:
 
 ```bash
+test -r scripts/lib/git-memory-lib.sh || echo 'MISSING: scripts/lib/git-memory-lib.sh'
 chmod +x scripts/*.sh scripts/test/*.sh
 ./scripts/test/run-tests.sh
 ./scripts/check-memory.sh --fix
 ```
+
+The first line is not ceremony. Every script sources that library and exits 2
+without it, so a migration that copied the scripts but not `scripts/lib/` fails
+on all four at once — and "exit 2, missing library" reads nothing like "your
+memory is inconsistent". Check it before blaming the repository.
 
 `run-tests.sh` proves the newly copied scripts run in this environment before any
 of them is trusted; it uses throwaway fixtures under `mktemp -d` and writes nothing
