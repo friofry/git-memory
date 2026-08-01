@@ -131,7 +131,26 @@ prove it. Wait for approval. Do not start writing while a question is open.
    npx skills@latest add mattpocock/skills -s <name> -s <name> ... -a universal -y
    ```
 
-7. Make the tool layer executable and record the vendored bytes:
+7. Link the Claude Code skills directory, unless nobody here uses Claude Code:
+
+   ```bash
+   mkdir -p .claude && ln -sfn ../.cursor/skills .claude/skills
+   ```
+
+   A link and not a copy: Claude Code reads `.claude/skills/`, every other
+   harness reads `.cursor/skills/`, and two directories holding the same nine
+   skills drift the first time one side is edited. `CLAUDE.md` arrives with the
+   seed and is a pointer to `AGENTS.md` carrying no commands of its own.
+
+   Some seed channels cannot carry a symbolic link — the Claude Web archive
+   strips it on purpose, because zip stores what a link points at. If the link is
+   absent after copying, this command is what creates it. Where the filesystem
+   refuses links at all (Windows without Developer Mode), copy `.cursor/skills`
+   to `.claude/skills` instead and say so in the report:
+   `./scripts/check-memory.sh` accepts a copy and tells the owner when the two
+   sides stop matching.
+
+8. Make the tool layer executable and record the vendored bytes:
 
    ```bash
    chmod +x scripts/*.sh scripts/test/*.sh

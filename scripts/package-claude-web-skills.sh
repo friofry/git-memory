@@ -294,6 +294,14 @@ for src in "${REPO_SKILL_SRCS[@]}"; do
   if [[ "$name" == "setup-git-memory" ]]; then
     rm -rf "${dest}/scaffold"
     cp -R "${ROOT}/scaffold" "${dest}/scaffold" || die "failed to embed scaffold/"
+    # .claude/skills is a symbolic link to .cursor/skills in the repository, and
+    # zip stores what a link points AT unless told otherwise (-y). Shipping it
+    # would put a second, full copy of every repo skill in the archive — the two
+    # homes the link exists to prevent, and they would drift the first time
+    # someone edited one side. zip -y is not the fix either: a symlink in a zip
+    # is unreliable on Windows and in whichever extractor a Claude Web user
+    # happens to have. The installer recreates the link, which is one command.
+    rm -rf "${dest}/scaffold/.claude"
   fi
   adapt_skill_md "${dest}/SKILL.md" "$name" "repo"
   zip_skill "$dest"

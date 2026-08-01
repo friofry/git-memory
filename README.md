@@ -294,7 +294,10 @@ Artifacts land in `dist/claude-web/`:
 
 `setup-git-memory.zip` is only the installer — it embeds `scaffold/`, including the
 scripts and the test harness, because in this channel there is no clone to copy bytes
-from. The craft skills and the other repo skills are **sibling** ZIPs in the same
+from. It deliberately does **not** carry `.claude/skills`: that is a symbolic link in
+the repository, and zip stores what a link points at, so shipping it would put a
+second full copy of every repo skill in the archive. The installer recreates the link
+with one command (`ln -sfn ../.cursor/skills .claude/skills`). The craft skills and the other repo skills are **sibling** ZIPs in the same
 `skills/` folder, not inside that archive. The script fails with a count error rather
 than leaving one ZIP behind.
 
