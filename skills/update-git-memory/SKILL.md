@@ -36,7 +36,8 @@ Detect v1: `docs/method/` is absent, or `scripts/git-memory-resolve.sh` is.
 | `scripts/git-memory-resolve.sh` | The only address parser in the system |
 | `scripts/git-memory-graph.sh` | The work graph, printed to stdout |
 | `scripts/git-memory-packet.sh` | The per-stage context envelope, printed to stdout |
-| `scripts/test/run-tests.sh` | Fixture-based harness for all four scripts |
+| `scripts/git-memory-progress.sh` | The twelve stages as a checklist filled from evidence, and `--cheatsheet` |
+| `scripts/test/run-tests.sh` | Fixture-based harness for every script above |
 | `.cursor/skills/prepare-packet/` | Assembles the packet before a long turn |
 | `.cursor/skills/plan-feature/` | Cuts an approved feature into tickets against its acceptance scenarios. Replaces upstream `/to-tickets` as the `plan` entry point |
 | `CLAUDE.md` and `.claude/skills` | Claude Code support. `CLAUDE.md` is a pointer to `AGENTS.md` and carries no commands of its own; `.claude/skills` is a **symbolic link** to `.cursor/skills`, not a copy. Create it with `ln -sfn ../.cursor/skills .claude/skills`, and skip both if the project has no Claude Code users |
@@ -131,7 +132,7 @@ Pay particular attention to:
 - `docs/agents/`, `docs/memory.md`, and `AGENTS.md`;
 - `docs/method/` — absent on a v1 install, and the largest single addition;
 - `templates/`;
-- `scripts/`, all four scripts and `scripts/test/`;
+- `scripts/`, every `git-memory-*.sh`, `scripts/lib/` and `scripts/test/`;
 - `.github/workflows/`, `.github/ISSUE_TEMPLATE/`, `.github/CODEOWNERS`.
 
 Never treat `CONTEXT.md`, `active-context.md`, feature specs, ADRs, domain docs,

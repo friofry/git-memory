@@ -1,6 +1,6 @@
 # Script layer tests
 
-The home for how the four scripts in [`../`](../) are proved to work:
+The home for how the scripts in [`../`](../) are proved to work:
 [`run-tests.sh`](run-tests.sh) builds throwaway repositories under `mktemp -d`, runs
 a script against one, and asserts on the exit status and on what was printed.
 

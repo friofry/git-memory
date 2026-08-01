@@ -292,6 +292,15 @@ For Claude.ai, which cannot install from a CLI,
 
 ## Design notes
 
+**The scripts live in the project's `scripts/`, not inside a skills directory.**
+They are not agent-private: `.github/workflows/` runs `check-memory.sh`, and a
+human runs `git-memory-progress.sh` to see where a feature stands. Put them under
+`.cursor/skills/` and CI depends on a skills folder; put them under
+`.agents/skills/` and they land in vendored, byte-pinned territory where an edit
+fails the checker. The cost is honest: on a project that already has a
+`scripts/`, these six files land beside yours. They all begin `git-memory-` apart
+from `check-memory.sh`, and the installer never overwrites an existing file.
+
 **One home per fact.** Everything else follows from this. The graph and packets
 print to stdout and are never committed, because a committed projection is a
 second copy that goes stale the first time someone edits a `Refs:` line. Removing

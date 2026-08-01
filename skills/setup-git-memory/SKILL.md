@@ -16,7 +16,7 @@ What lands, in layers:
 | Memory map | `docs/memory.md`, `CONTEXT.md`, `docs/adr/`, `specs/`, `.scratch/` | Where each fact lives, and the one-home rule |
 | Delivery | `docs/agents/delivery-workflow.md` | The 12 stages and the `Stage:` line |
 | Method | `docs/method/` + `docs/method/boilerplates/` | Types, addresses, gates, packet profiles, `M:` refs |
-| Tools | `scripts/check-memory.sh`, `git-memory-resolve.sh`, `git-memory-graph.sh`, `git-memory-packet.sh`, `scripts/test/` | Resolution, projection, enforcement |
+| Tools | `scripts/check-memory.sh`, `git-memory-resolve.sh`, `git-memory-graph.sh`, `git-memory-packet.sh`, `git-memory-progress.sh`, `scripts/lib/`, `scripts/test/` | Resolution, projection, enforcement |
 | Skills | `.cursor/skills/` (repo-authored) · `.agents/skills/` (vendored Matt) | Repeatable procedures |
 | GitHub | `.github/workflows/`, `.github/ISSUE_TEMPLATE/`, `pull_request_template.md`, `CODEOWNERS` | Intake and the checks that block a merge |
 

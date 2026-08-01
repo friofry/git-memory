@@ -33,11 +33,11 @@ SECTIONS="resolver graph packet checker headers"
 
 usage() {
   cat <<'EOF'
-usage: run-tests.sh [--verbose] [--keep] [resolver|graph|packet|checker]
+usage: run-tests.sh [--verbose] [--keep] [resolver|graph|packet|checker|headers]
        run-tests.sh --help
 
 Run the script layer's tests. Each test builds a throwaway repository under
-mktemp -d, runs one of the four scripts against it, and asserts on the exit status
+mktemp -d, runs one of the scripts against it, and asserts on the exit status
 and on what was printed. Nothing outside that temporary directory is written, and
 a trap removes it however the run ends.
 
@@ -45,7 +45,7 @@ a trap removes it however the run ends.
              output for every failing assertion.
   --keep     leave the fixture repositories on disk and print the path. Use it to
              reproduce a failure by hand; the run is otherwise unchanged.
-  <section>  run one of resolver, graph, packet, checker. Default: all four.
+  <section>  run one of resolver, graph, packet, checker, headers. Default: all.
 
 Output is TAP-ish: one "ok N - description" or "not ok N - description" per
 assertion, a "1..N" plan line, then a one-line summary.
