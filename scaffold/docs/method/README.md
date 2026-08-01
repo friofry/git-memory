@@ -77,7 +77,7 @@ A heading-shaped line is a declaration wherever it appears, including inside a
 fenced code block. Never paste a declaration line into an example; describe the
 shape in prose, as the paragraph above does.
 
-`scripts/git-memory-resolve.sh` is the only thing that reads these headings, and it
+`.git-memory-scripts/git-memory-resolve.sh` is the only thing that reads these headings, and it
 requires exactly one declaration per address. Two headings declaring the same
 address is a failure, not a merge to be resolved by whoever greps first.
 
@@ -95,7 +95,7 @@ address is a failure, not a merge to be resolved by whoever greps first.
    reader stop skimming.
 5. **Reference it, never copy it.** Add the address to the `Refs:` line of the nodes
    that obey it: `Refs: M:gate-approval, TERM:event-envelope`.
-6. **Run `./scripts/check-memory.sh`.** It fails on a duplicate declaration and on a
+6. **Run `./.git-memory-scripts/check-memory.sh`.** It fails on a duplicate declaration and on a
    `Refs:` entry that resolves to nothing.
 
 ## Never copy the prose

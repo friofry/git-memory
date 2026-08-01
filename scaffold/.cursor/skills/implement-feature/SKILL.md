@@ -14,7 +14,7 @@ ready for agent work.
 
 Every `T:` and `M:` string below is an address, not a nickname: `T:007/03` is one
 ticket file, `M:gate-approval` one heading under `docs/method/`. Resolve either with
-`./scripts/git-memory-resolve.sh resolve <address>` —
+`./.git-memory-scripts/git-memory-resolve.sh resolve <address>` —
 [`../../../docs/method/addressing.md`](../../../docs/method/addressing.md).
 
 ## 1. Assemble the packet first
@@ -24,7 +24,7 @@ and stage, and work from it —
 [`../prepare-packet/SKILL.md`](../prepare-packet/SKILL.md).
 
 ```bash
-./scripts/git-memory-packet.sh T:007/03 build
+./.git-memory-scripts/git-memory-packet.sh T:007/03 build
 ```
 
 The `build` profile carries Route, Contract and Slice, and deliberately omits the
@@ -52,7 +52,7 @@ contract inside a build turn.
    Resolve each address:
 
    ```bash
-   ./scripts/git-memory-resolve.sh resolve T:007/01
+   ./.git-memory-scripts/git-memory-resolve.sh resolve T:007/01
    ```
 
    An unresolvable blocker is a stop, not a formality — it usually means the
@@ -93,7 +93,7 @@ address on the ticket's `Refs:` line; do not paste the skeleton's prose.
 ## 4. Prove it and hand off
 
 1. Run every command in the **Before finishing** block of
-   [`../../../AGENTS.md`](../../../AGENTS.md) — `./scripts/check-memory.sh` plus each
+   [`../../../AGENTS.md`](../../../AGENTS.md) — `./.git-memory-scripts/check-memory.sh` plus each
    project command that repository filled in — and no substitutes of your own. A
    command still commented out there is unfinished setup, not a command to skip: name
    the missing check in the pull request body. That is the `checks` stage — set
@@ -121,7 +121,7 @@ After the human accepts, set `Stage: memory`, write the facts and decisions that
 changed into their one home each — `CONTEXT.md` for a term, `docs/adr/` for a
 hard-to-reverse decision, `decisions.md` for a local choice
 ([`../../../docs/memory.md`](../../../docs/memory.md), one-home rule) — add the
-`Implemented in:` line, run `./scripts/check-memory.sh`, and only then set
+`Implemented in:` line, run `./.git-memory-scripts/check-memory.sh`, and only then set
 `Status: implemented`. That is `M:gate-memory`.
 
 ## Output
@@ -129,7 +129,7 @@ hard-to-reverse decision, `decisions.md` for a local choice
 - Scoped commits or a pull request whose body carries the commands and their output.
 - Green targeted tests for every scenario the slice claims.
 - `decisions.md` updated and the ticket closed at `done` or `resolved`.
-- `./scripts/check-memory.sh` green.
+- `./.git-memory-scripts/check-memory.sh` green.
 
 ## Stop and escalate when
 

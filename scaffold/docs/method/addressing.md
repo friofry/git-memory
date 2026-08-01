@@ -54,7 +54,7 @@ the backticks and the colon: `M:gate-approval` becomes `#mgate-approval`.
 The feature is `specs/007-auth-envelope/`, its tickets are under
 `.scratch/auth-envelope/`, and it ran one throwaway spike.
 
-| Address | `./scripts/git-memory-resolve.sh resolve …` prints | Node file, if any |
+| Address | `./.git-memory-scripts/git-memory-resolve.sh resolve …` prints | Node file, if any |
 |---------|--------------------------------------------------|-------------------|
 | `F:007-auth-envelope` | `specs/007-auth-envelope/` | `specs/007-auth-envelope/spec.md` |
 | `T:007/03` | `.scratch/auth-envelope/issues/03-envelope-schema.md` | the same file |
@@ -83,7 +83,7 @@ unresolvable address takes seconds instead of an afternoon.
 | Family | Exact glob or scan | The failure mode it produces |
 |--------|-------------------|------------------------------|
 | `F:` | `specs/<NN>-*/` | Two features numbered `007` — `specs/007-auth-envelope/` and `specs/007-auth-tokens/` both match, so every `T:007/*` and `S:007/*` in the repository becomes ambiguous at once. The resolver exits 1 and names both directories rather than picking the first. |
-| `T:` | `.scratch/<slug>/issues/<MM>-*.md` | Two tickets numbered `03` in one feature, usually from two agents adding a ticket on separate branches. `./scripts/check-memory.sh` reports duplicate numbering; renumber the later one and fix its `ID:`. |
+| `T:` | `.scratch/<slug>/issues/<MM>-*.md` | Two tickets numbered `03` in one feature, usually from two agents adding a ticket on separate branches. `./.git-memory-scripts/check-memory.sh` reports duplicate numbering; renumber the later one and fix its `ID:`. |
 | `S:` | `spikes/<slug>/<name>/` | The spike directory exists but holds no `README.md`, so there is no node header, no `ID:` to compare against the path, and no record of the question the spike answered. |
 | `ADR:` | `docs/adr/<NNNN>-*.md` | `ADR:12` written unpadded matches nothing. Padding is not cosmetic — it is what makes the glob a single unambiguous pattern. |
 | `TERM:` | heading anchor in `CONTEXT.md` | A term renamed in the glossary leaves every `Refs:` entry dangling, and the glossary holds no back-references to tell you who cited it. Rename by grepping the old address first. |
@@ -124,11 +124,11 @@ The trade is deliberate and asymmetric:
 - `F:` carries the full `NN-slug`, because a feature address is the one an operator
   types and reads most, and `F:007-auth-envelope` says what it is where `F:007` does
   not. The cost is that renaming a feature slug means updating `F:` references. That
-  is a handful of lines, and `./scripts/check-memory.sh` finds every one of them.
+  is a handful of lines, and `./.git-memory-scripts/check-memory.sh` finds every one of them.
 
 ## One resolver
 
-`scripts/git-memory-resolve.sh` is the only implementation of address to path in
+`.git-memory-scripts/git-memory-resolve.sh` is the only implementation of address to path in
 this system. `git-memory-graph.sh`, `git-memory-packet.sh` and `check-memory.sh` all
 call it; none re-implements the parse. If you need resolution in a new script, call
 the resolver — a second parser is a second definition of what an address means, and

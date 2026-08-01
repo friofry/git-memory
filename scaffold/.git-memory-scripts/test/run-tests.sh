@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# The test suite for the script layer (see scripts/test/README.md).
+# The test suite for the script layer (see .git-memory-scripts/test/README.md).
 #
-#   scripts/test/run-tests.sh             run every section, TAP-ish output
-#   scripts/test/run-tests.sh --verbose   print expected and actual on every failure
-#   scripts/test/run-tests.sh checker     run one section only
-#   scripts/test/run-tests.sh --help      usage, exit 0
+#   .git-memory-scripts/test/run-tests.sh             run every section, TAP-ish output
+#   .git-memory-scripts/test/run-tests.sh --verbose   print expected and actual on every failure
+#   .git-memory-scripts/test/run-tests.sh checker     run one section only
+#   .git-memory-scripts/test/run-tests.sh --help      usage, exit 0
 #
 # No bats, no npm, no fixtures committed to the repository: every test builds the
 # repository it needs under mktemp -d, runs a script against it, and asserts on the
@@ -146,8 +146,8 @@ run() { # repo, script, args...
   local repo=$1 script=$2
   shift 2
   RUN_DIR=$repo
-  RUN_CMD="scripts/$script $*"
-  RUN_OUT=$(cd "$repo" && bash "scripts/$script" "$@" 2>"$tmproot/stderr")
+  RUN_CMD=".git-memory-scripts/$script $*"
+  RUN_OUT=$(cd "$repo" && bash ".git-memory-scripts/$script" "$@" 2>"$tmproot/stderr")
   RUN_STATUS=$?
   capture
 }
@@ -158,8 +158,8 @@ run_from_elsewhere() { # repo, script, args...
   local repo=$1 script=$2
   shift 2
   RUN_DIR=$tmproot
-  RUN_CMD="$repo/scripts/$script $* (cwd $tmproot)"
-  RUN_OUT=$(cd "$tmproot" && bash "$repo/scripts/$script" "$@" 2>"$tmproot/stderr")
+  RUN_CMD="$repo/.git-memory-scripts/$script $* (cwd $tmproot)"
+  RUN_OUT=$(cd "$tmproot" && bash "$repo/.git-memory-scripts/$script" "$@" 2>"$tmproot/stderr")
   RUN_STATUS=$?
   capture
 }
@@ -246,16 +246,17 @@ clone_template() { # builder, template name, destination
 }
 
 install_scripts() { # repo
-  mkdir -p "$1/scripts/lib"
+  mkdir -p "$1/.git-memory-scripts/lib"
   cp "$scripts_dir/git-memory-resolve.sh" \
      "$scripts_dir/git-memory-graph.sh" \
      "$scripts_dir/git-memory-packet.sh" \
-     "$scripts_dir/check-memory.sh" "$1/scripts/"
+     "$scripts_dir/git-memory-progress.sh" \
+     "$scripts_dir/check-memory.sh" "$1/.git-memory-scripts/"
   # The shared header reader travels with them; every script refuses to run
   # without it rather than falling back to a private copy, which is the whole
   # point of there being one reader.
-  cp "$scripts_dir/lib/git-memory-lib.sh" "$1/scripts/lib/"
-  chmod +x "$1"/scripts/*.sh
+  cp "$scripts_dir/lib/git-memory-lib.sh" "$1/.git-memory-scripts/lib/"
+  chmod +x "$1"/.git-memory-scripts/*.sh
 }
 
 # The generated block of specs/README.md, derived here from the spec.md files
@@ -273,7 +274,7 @@ sync_specs_table() { # repo
   {
     printf '# Specs\n\n'
     printf 'One directory per feature. The table below is generated; regenerate it\n'
-    printf 'with scripts/check-memory.sh --fix.\n\n'
+    printf 'with .git-memory-scripts/check-memory.sh --fix.\n\n'
     printf '<!-- BEGIN generated:specs-table -->\n'
     printf '| Spec | Stage | Status |\n|------|-------|--------|\n'
     printf '%s' "$rows"
@@ -302,7 +303,7 @@ Read docs/memory.md first. The delivery stage of a feature lives in its spec.
 ## Before finishing
 
 ```bash
-./scripts/check-memory.sh
+./.git-memory-scripts/check-memory.sh
 ```
 EOF
 
@@ -1221,7 +1222,7 @@ EOF
 }
 
 # --- 11. the shared header reader ----------------------------------------------
-# One reader, in scripts/lib/git-memory-lib.sh. Four separate implementations
+# One reader, in .git-memory-scripts/lib/git-memory-lib.sh. Four separate implementations
 # existed before and only one skipped fenced blocks, so every case below was a
 # live defect in at least three of the four consumers.
 

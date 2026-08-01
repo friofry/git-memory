@@ -69,7 +69,7 @@ _Avoid_: assertion, self-report, "the status says".
 address, the work graph, a packet, the frontier. Projections print to stdout and are
 not committed, so there is no stale-generated-file failure mode to check. The one
 exception is the generated specs table, which lives between markers and is rebuilt
-by `./scripts/check-memory.sh --fix`.
+by `./.git-memory-scripts/check-memory.sh --fix`.
 _Avoid_: cache, export, build artifact.
 
 **One-home rule** — every fact has exactly one file that owns it; other files link

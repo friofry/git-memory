@@ -17,5 +17,5 @@ skills load in Claude Code and in Cursor from the same bytes rather than from
 two copies that drift. If your platform or Git configuration does not restore
 symbolic links (`git config core.symlinks` reads `false` on Windows without
 Developer Mode), replace the link with a copy and re-run
-`./scripts/check-memory.sh` — it verifies the two directories hold the same
+`./.git-memory-scripts/check-memory.sh` — it verifies the two directories hold the same
 skills either way.

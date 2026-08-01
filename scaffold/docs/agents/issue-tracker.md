@@ -22,7 +22,7 @@ Nothing durable may live only here — feature intent belongs in `specs/`. A glo
 - One feature per directory: `.scratch/<feature-slug>/`, created only when there are tickets
 - `spec.md` here is a **pointer** to `specs/<NN>-<slug>/` and carries no feature status
 - Implementation issues: `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01`
-- **Numbers are unique within a feature.** Two files starting `03-` in one `issues/` folder make the address `T:007/03` ambiguous, and the resolver has no way to pick. `scripts/check-memory.sh` fails on a duplicate number rather than resolving to whichever file `ls` returned first
+- **Numbers are unique within a feature.** Two files starting `03-` in one `issues/` folder make the address `T:007/03` ambiguous, and the resolver has no way to pick. `.git-memory-scripts/check-memory.sh` fails on a duplicate number rather than resolving to whichever file `ls` returned first
 - Triage state on ticket files only: `Status:` or `**Status:**` line (see [`triage-labels.md`](triage-labels.md) for the permitted values)
 - Comments append under `## Comments`
 

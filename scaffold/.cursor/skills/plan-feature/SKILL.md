@@ -57,7 +57,7 @@ and on no ticket.
 
 One file per ticket under `.scratch/<slug>/issues/NN-<short-slug>.md`, numbered
 uniquely within the feature. Two files starting `03-` make `T:007/03` ambiguous
-everywhere at once, and `./scripts/check-memory.sh` fails on it.
+everywhere at once, and `./.git-memory-scripts/check-memory.sh` fails on it.
 
 ```
 # Sign the envelope
@@ -93,8 +93,8 @@ Two rules the checker enforces:
   a missing `interface` ticket between them.
 
 ```bash
-./scripts/git-memory-graph.sh --format md      # the queue, blockers spelled out
-./scripts/check-memory.sh                      # resolution and cycles
+./.git-memory-scripts/git-memory-graph.sh --format md      # the queue, blockers spelled out
+./.git-memory-scripts/check-memory.sh                      # resolution and cycles
 ```
 
 ## 5. Prove the plan covers the contract
@@ -122,7 +122,7 @@ at least one ticket with no unresolved `Blocked by:`. A plan whose every ticket
 is blocked has a cycle or a missing entry point.
 
 ```bash
-./scripts/git-memory-packet.sh F:007-auth-envelope build
+./.git-memory-scripts/git-memory-packet.sh F:007-auth-envelope build
 ```
 
 Hand over in the `M:handoff-pr` shape if the session ends here.
@@ -131,8 +131,8 @@ Hand over in the `M:handoff-pr` shape if the session ends here.
 
 - `.scratch/<slug>/issues/NN-*.md`, one per ticket, each with a full node header.
 - `Stage: build` on `spec.md`, and the frontier reachable from
-  `./scripts/git-memory-graph.sh`.
-- `./scripts/check-memory.sh` green, `--strict` green on the new tickets.
+  `./.git-memory-scripts/git-memory-graph.sh`.
+- `./.git-memory-scripts/check-memory.sh` green, `--strict` green on the new tickets.
 - A scenario-to-ticket mapping in the handoff.
 
 ## Stop and escalate when

@@ -12,7 +12,7 @@ ticket and spike README:
 Type: interface
 ```
 
-`./scripts/check-memory.sh` rejects any value outside the table below, and any value
+`./.git-memory-scripts/check-memory.sh` rejects any value outside the table below, and any value
 that is not legal for the node kind carrying it.
 
 ## The eleven values
@@ -138,7 +138,7 @@ the line when the ticket arrives:
 | `Type: task` | `implementation` |
 
 **The two aliases are not in the checker's accepted set, and that is deliberate.** A
-ticket carrying `Type: grilling` fails `./scripts/check-memory.sh` with the offending
+ticket carrying `Type: grilling` fails `./.git-memory-scripts/check-memory.sh` with the offending
 value named, which costs one edit. Accepting the alias instead would cost the closed
 set: two words for one type, tables above that are no longer exhaustive, and a grep
 for `Type: research` that silently misses a third of the tickets. A drifted

@@ -11,10 +11,10 @@ a test suite that needs installing is a test suite that stops being run.
 ## Running it
 
 ```bash
-./scripts/test/run-tests.sh              # every section
-./scripts/test/run-tests.sh --verbose    # print expected, actual and the whole output on failure
-./scripts/test/run-tests.sh checker      # one section: resolver, graph, packet or checker
-./scripts/test/run-tests.sh --keep       # leave the fixtures on disk and print the path
+./.git-memory-scripts/test/run-tests.sh              # every section
+./.git-memory-scripts/test/run-tests.sh --verbose    # print expected, actual and the whole output on failure
+./.git-memory-scripts/test/run-tests.sh checker      # one section: resolver, graph, packet or checker
+./.git-memory-scripts/test/run-tests.sh --keep       # leave the fixtures on disk and print the path
 ```
 
 Output is TAP-ish — `ok N - description`, `not ok N - description`, a `1..N` plan

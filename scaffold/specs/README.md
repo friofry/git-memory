@@ -33,16 +33,16 @@ field rules live in [`docs/memory.md`](../docs/memory.md).
 - `Stage:` appears here and on no other file in the repository.
 
 A spec written before the header existed carries `Status:` and `Stage:` alone. That
-is a warning under `scripts/check-memory.sh --strict` and passes a default run, so
+is a warning under `.git-memory-scripts/check-memory.sh --strict` and passes a default run, so
 an installed v1 repository stays green.
 
 ## Status and stage
 
 `Status:` lives in exactly one file per feature: `specs/<NN>-<slug>/spec.md`, with values `draft` | `active` | `implemented`. Sibling files and `.scratch/` pointers must not repeat it. Ticket files under `.scratch/<slug>/issues/` carry their own triage `Status:` — that is a different thing (see [`docs/agents/triage-labels.md`](../docs/agents/triage-labels.md)).
 
-`Stage:` sits next to it in the same file and names the delivery step the feature is in, from `request` to `memory`. The vocabulary and the stage/status mapping live in [`docs/agents/delivery-workflow.md`](../docs/agents/delivery-workflow.md); `scripts/check-memory.sh` rejects an unknown stage or a stage that contradicts the status.
+`Stage:` sits next to it in the same file and names the delivery step the feature is in, from `request` to `memory`. The vocabulary and the stage/status mapping live in [`docs/agents/delivery-workflow.md`](../docs/agents/delivery-workflow.md); `.git-memory-scripts/check-memory.sh` rejects an unknown stage or a stage that contradicts the status.
 
-The table below is derived from those `spec.md` files. Regenerate with `scripts/check-memory.sh --fix`.
+The table below is derived from those `spec.md` files. Regenerate with `.git-memory-scripts/check-memory.sh --fix`.
 
 <!-- BEGIN generated:specs-table -->
 | Spec | Stage | Status |

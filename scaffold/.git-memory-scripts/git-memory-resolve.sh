@@ -2,11 +2,11 @@
 #
 # Address to path — the only address parser in this system (see docs/method/addressing.md).
 #
-#   scripts/git-memory-resolve.sh F:007-auth-envelope   print the repo-relative path
-#   scripts/git-memory-resolve.sh --check T:007/03      silent; exit 0 if it resolves
-#   scripts/git-memory-resolve.sh --print M:gate-approval  print only that section
-#   scripts/git-memory-resolve.sh --all                 print every address and its path
-#   scripts/git-memory-resolve.sh --help                usage, exit 0
+#   .git-memory-scripts/git-memory-resolve.sh F:007-auth-envelope   print the repo-relative path
+#   .git-memory-scripts/git-memory-resolve.sh --check T:007/03      silent; exit 0 if it resolves
+#   .git-memory-scripts/git-memory-resolve.sh --print M:gate-approval  print only that section
+#   .git-memory-scripts/git-memory-resolve.sh --all                 print every address and its path
+#   .git-memory-scripts/git-memory-resolve.sh --help                usage, exit 0
 #
 set -uo pipefail
 shopt -s nullglob

@@ -97,7 +97,7 @@ A **packet** is that decision, generated — the context envelope for one turn a
 one stage.
 
 ```bash
-./scripts/git-memory-packet.sh T:012/03 build
+./.git-memory-scripts/git-memory-packet.sh T:012/03 build
 ```
 
 Six layers exist; a **profile** is which of them a stage carries.
@@ -193,8 +193,8 @@ git clone https://github.com/friofry/git-memory.git /tmp/git-memory
 cd <your-project>
 rsync -a --ignore-existing /tmp/git-memory/scaffold/ ./
 ls -l .claude/skills || ln -sfn ../.cursor/skills .claude/skills
-chmod +x scripts/*.sh scripts/test/*.sh
-./scripts/test/run-tests.sh && ./scripts/check-memory.sh --fix
+chmod +x .git-memory-scripts/*.sh .git-memory-scripts/test/*.sh
+./.git-memory-scripts/test/run-tests.sh && ./.git-memory-scripts/check-memory.sh --fix
 ```
 
 Then fill `docs/product/charter.md`, put the real commands into `AGENTS.md`
@@ -209,14 +209,14 @@ file that differs. It handles v1 → v2, which is additive with exactly one rena
 
 ```bash
 npx skills@latest add friofry/git-memory -s update-git-memory -a universal -y
-npx skills@latest update && ./scripts/check-memory.sh --fix   # craft skills only
+npx skills@latest update && ./.git-memory-scripts/check-memory.sh --fix   # craft skills only
 ```
 
 **Remove.** Nothing here is load-bearing for your code, so removal is deletion.
 The tool layer and the method layer go first:
 
 ```bash
-git rm -r scripts/check-memory.sh scripts/git-memory-*.sh scripts/lib scripts/test
+git rm -r .git-memory-scripts/check-memory.sh .git-memory-scripts/git-memory-*.sh .git-memory-scripts/lib .git-memory-scripts/test
 git rm -r docs/method .cursor/skills .claude .agents skills-lock.json CLAUDE.md
 git rm .github/workflows/memory.yml .github/workflows/delivery.yml
 ```
@@ -281,7 +281,7 @@ git-memory/
     │   ├── agents/                  # delivery workflow, vendored skills, github gates
     │   └── method/                  # types, addressing, gates, packet profiles
     ├── specs/ · .scratch/ · spikes/ · rules/ · templates/
-    ├── scripts/                     # the six above, plus lib/ and test/
+    ├── .git-memory-scripts/                     # the six above, plus lib/ and test/
     ├── .cursor/skills/              # nine repo-authored skills
     ├── .claude/skills -> ../.cursor/skills
     └── .github/                     # memory.yml (advisory) · delivery.yml (requirable)
@@ -292,13 +292,13 @@ For Claude.ai, which cannot install from a CLI,
 
 ## Design notes
 
-**The scripts live in the project's `scripts/`, not inside a skills directory.**
+**The scripts live in the project's `.git-memory-scripts/`, not inside a skills directory.**
 They are not agent-private: `.github/workflows/` runs `check-memory.sh`, and a
 human runs `git-memory-progress.sh` to see where a feature stands. Put them under
 `.cursor/skills/` and CI depends on a skills folder; put them under
 `.agents/skills/` and they land in vendored, byte-pinned territory where an edit
 fails the checker. The cost is honest: on a project that already has a
-`scripts/`, these six files land beside yours. They all begin `git-memory-` apart
+`.git-memory-scripts/`, these six files land beside yours. They all begin `git-memory-` apart
 from `check-memory.sh`, and the installer never overwrites an existing file.
 
 **One home per fact.** Everything else follows from this. The graph and packets

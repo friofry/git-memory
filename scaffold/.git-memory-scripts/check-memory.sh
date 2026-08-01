@@ -2,11 +2,11 @@
 #
 # Consistency checks for the layered project memory (see docs/memory.md).
 #
-#   scripts/check-memory.sh           report violations, non-zero exit on failure
-#   scripts/check-memory.sh --fix     regenerate derived blocks, then report
-#   scripts/check-memory.sh --strict  also require the v2 node header and the
+#   .git-memory-scripts/check-memory.sh           report violations, non-zero exit on failure
+#   .git-memory-scripts/check-memory.sh --fix     regenerate derived blocks, then report
+#   .git-memory-scripts/check-memory.sh --strict  also require the v2 node header and the
 #                                     late-stage evidence a gate demands
-#   scripts/check-memory.sh --help    usage, exit 0
+#   .git-memory-scripts/check-memory.sh --help    usage, exit 0
 #
 # --fix and --strict compose in either order. An unknown flag exits 2 without
 # running a check, so a typo never reads as a clean repository.
@@ -23,10 +23,10 @@ cd "$(dirname "$0")/.." || exit 1
 
 # The one header reader and the one hashing shim. Sourcing rather than forking
 # keeps each check cheap: the old inline readers cost four processes per field.
-if [ -r scripts/lib/git-memory-lib.sh ]; then
-  . scripts/lib/git-memory-lib.sh
+if [ -r .git-memory-scripts/lib/git-memory-lib.sh ]; then
+  . .git-memory-scripts/lib/git-memory-lib.sh
 else
-  printf '%s: missing scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
+  printf '%s: missing .git-memory-scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
   exit 2
 fi
 
@@ -36,7 +36,7 @@ nl=$'\n'
 # The only address parser in the system (docs/method/addressing.md, "One
 # resolver"). Absent in a repository installed before v2, which is why every
 # caller checks for it rather than assuming it.
-resolver=scripts/git-memory-resolve.sh
+resolver=.git-memory-scripts/git-memory-resolve.sh
 
 usage() {
   cat <<'EOF'
@@ -187,7 +187,7 @@ check_status_home() {
 # --- 2b. delivery stage has one home and a known value -------------------------
 # Vocabulary and stage/status mapping: docs/agents/delivery-workflow.md
 
-# The twelve stages live in scripts/lib/git-memory-lib.sh, once.
+# The twelve stages live in .git-memory-scripts/lib/git-memory-lib.sh, once.
 stage_is_known() { gm_stage_is_known "$1"; }
 
 check_stage_home() {
@@ -283,7 +283,7 @@ check_specs_table() {
     ' specs/README.md > specs/README.md.tmp && mv specs/README.md.tmp specs/README.md
     ok "specs/README.md table regenerated"
   else
-    err "specs/README.md table is stale (run scripts/check-memory.sh --fix)"
+    err "specs/README.md table is stale (run .git-memory-scripts/check-memory.sh --fix)"
   fi
 }
 
@@ -442,7 +442,7 @@ check_vendored_skills() {
     printf '%s\n' "$expected" > .agents/skills.sha256
     ok ".agents/skills.sha256 regenerated"
   else
-    err "vendored skill bytes differ from .agents/skills.sha256 (upstream copies carry no local edits; after npx skills add/update run scripts/check-memory.sh --fix)"
+    err "vendored skill bytes differ from .agents/skills.sha256 (upstream copies carry no local edits; after npx skills add/update run .git-memory-scripts/check-memory.sh --fix)"
   fi
 }
 

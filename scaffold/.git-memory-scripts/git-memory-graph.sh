@@ -2,10 +2,10 @@
 #
 # The work graph, projected from specs/, .scratch/ and spikes/ (see docs/method/addressing.md).
 #
-#   scripts/git-memory-graph.sh                one JSON object per node, on stdout
-#   scripts/git-memory-graph.sh --format md    a tree grouped by feature
-#   scripts/git-memory-graph.sh --format dot   a graphviz digraph
-#   scripts/git-memory-graph.sh --help         usage, exit 0
+#   .git-memory-scripts/git-memory-graph.sh                one JSON object per node, on stdout
+#   .git-memory-scripts/git-memory-graph.sh --format md    a tree grouped by feature
+#   .git-memory-scripts/git-memory-graph.sh --format dot   a graphviz digraph
+#   .git-memory-scripts/git-memory-graph.sh --help         usage, exit 0
 #
 set -uo pipefail
 shopt -s nullglob
@@ -16,7 +16,7 @@ cd "$here/.." || exit 1
 if [ -r "$here/lib/git-memory-lib.sh" ]; then
   . "$here/lib/git-memory-lib.sh"
 else
-  printf '%s: missing scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
+  printf '%s: missing .git-memory-scripts/lib/git-memory-lib.sh\n' "$(basename "$0")" >&2
   exit 2
 fi
 
@@ -52,7 +52,7 @@ never committed (see docs/method/addressing.md).
                     are dashed and red. Fill colour is the node's Type:.
                     Render with: git-memory-graph.sh --format dot | dot -Tsvg
 
-Addresses come from scripts/git-memory-resolve.sh --all, which is the only
+Addresses come from .git-memory-scripts/git-memory-resolve.sh --all, which is the only
 address parser in the system; this script parses none itself. Node order is the
 resolver's: each feature followed by its own tickets and spikes.
 
@@ -62,7 +62,7 @@ not an error — a scaffold installed yesterday has no work in it yet.
 Header values are read as written. A ticket carrying a Stage: line, a Type:
 outside the closed set, a Blocked by: address that resolves to nothing, or a
 blocking cycle all appear here unchanged; reporting them is
-scripts/check-memory.sh's job — including the cycle, which it now detects — and
+.git-memory-scripts/check-memory.sh's job — including the cycle, which it now detects — and
 a graph that silently repaired them would hide the failure it exists to expose.
 Drawing a cycle you can see is the point: --format dot renders it as a loop.
 EOF

@@ -234,12 +234,12 @@ whether a choice was local to this feature or global to the project.
 ## How to assemble one
 
 ```bash
-./scripts/git-memory-packet.sh F:007-auth-envelope build
-./scripts/git-memory-packet.sh F:007-auth-envelope review --format json
-./scripts/git-memory-packet.sh T:007/03 build --budget 8000
+./.git-memory-scripts/git-memory-packet.sh F:007-auth-envelope build
+./.git-memory-scripts/git-memory-packet.sh F:007-auth-envelope review --format json
+./.git-memory-scripts/git-memory-packet.sh T:007/03 build --budget 8000
 ```
 
-The script resolves the address through `scripts/git-memory-resolve.sh`, reads the
+The script resolves the address through `.git-memory-scripts/git-memory-resolve.sh`, reads the
 `Stage:` line to pick the profile, and prints the assembled packet to stdout. It
 writes nothing into the repository. Run `--help` for the full usage block.
 

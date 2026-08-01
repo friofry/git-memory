@@ -19,12 +19,12 @@ on:
     branches: [main]
     paths:
       - '**/*.md'
-      - 'scripts/**'
+      - '.git-memory-scripts/**'
       - '.github/workflows/memory.yml'
   pull_request:
     paths:
       - '**/*.md'
-      - 'scripts/**'
+      - '.git-memory-scripts/**'
       - '.github/workflows/memory.yml'
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check layered memory consistency
-        run: ./scripts/check-memory.sh
+        run: ./.git-memory-scripts/check-memory.sh
 
   strict:
     # `--strict` adds the structural rules a v1 repository has not adopted yet:
@@ -54,10 +54,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check structural rules a v1 repository may not satisfy yet
-        run: ./scripts/check-memory.sh --strict
+        run: ./.git-memory-scripts/check-memory.sh --strict
 
   scripts:
-    # The scripts under scripts/ are the only executable part of the memory
+    # The scripts under .git-memory-scripts/ are the only executable part of the memory
     # layer, so they are the only part that can be wrong silently. The suite
     # builds throwaway fixture repositories and asserts on exit codes; it needs
     # no dependencies and no network.
@@ -77,8 +77,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ ! -x scripts/test/run-tests.sh ]; then
-            echo "no executable scripts/test/run-tests.sh here; nothing to run"
+          if [ ! -x .git-memory-scripts/test/run-tests.sh ]; then
+            echo "no executable .git-memory-scripts/test/run-tests.sh here; nothing to run"
             echo "run=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -99,14 +99,14 @@ jobs:
           # closes the pipe on its first match and git exits 141, which would
           # read as "unchanged" on exactly the pull requests that changed a
           # script.
-          changed=$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" -- scripts/)
+          changed=$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" -- .git-memory-scripts/)
           if [ -n "${changed}" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
-            echo "scripts/ unchanged in this range"
+            echo ".git-memory-scripts/ unchanged in this range"
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run the script test suite
         if: steps.decide.outputs.run == 'true'
-        run: ./scripts/test/run-tests.sh
+        run: ./.git-memory-scripts/test/run-tests.sh
