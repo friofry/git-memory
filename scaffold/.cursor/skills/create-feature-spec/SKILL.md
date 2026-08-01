@@ -84,7 +84,7 @@ four exist and have been read.
    The scenarios live in `acceptance.md`; the examples in `spec.md` illustrate and
    do not compete with them.
 3. For the content itself — user stories, seams, implementation and testing
-   decisions — follow `.agents/skills/to-spec/`, and route its sections into these
+   decisions — follow `.agents/skills/grill-with-docs/`, and route its output into these
    four files per
    [`../../../docs/agents/vendored-skills.md`](../../../docs/agents/vendored-skills.md).
 4. Link product, domain and ADR documents instead of copying paragraphs. A term this
