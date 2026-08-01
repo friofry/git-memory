@@ -939,6 +939,20 @@ test_packet() {
   expect_status 0 "packet: --help exits 0"
   expect_has "$RUN_OUT" "usage: git-memory-packet.sh" "packet: --help prints a usage block"
 
+  # --- the address index survives resolve_node ---
+  # It is walked once and read again by the ticket-queue and Memory builders.
+  # Declaring it local emptied it on return, and set -u turned every later read
+  # into a stderr diagnostic the render survived: the packet stayed well-formed
+  # and quietly reported an empty queue. Nothing else in the suite noticed.
+  run "$repo" git-memory-packet.sh F:007-auth-envelope build
+  expect_status 0 "packet: a build packet exits 0"
+  expect_empty "$RUN_ERR" "packet: a build packet writes nothing to stderr"
+  expect_has "$RUN_OUT" "T:007/03" "packet: the Slice layer lists the feature's tickets"
+
+  run "$repo" git-memory-packet.sh F:007-auth-envelope review
+  expect_empty "$RUN_ERR" "packet: a review packet writes nothing to stderr"
+  expect_has "$RUN_OUT" "TERM:" "packet: the Memory layer carries the glossary family"
+
   # One assertion set per stage: the profile's layers are carried, the rest are
   # named as omitted rather than left out silently.
   for stage in research spec approval plan build checks review rework acceptance memory; do
