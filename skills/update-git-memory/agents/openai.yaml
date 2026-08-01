@@ -1,2 +1,2 @@
 name: update-git-memory
-description: Safely update copied git-memory scaffold files in an existing project.
+description: Safely update copied git-memory scaffold files in an existing project, including the v1 to v2 migration.

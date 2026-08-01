@@ -8,7 +8,9 @@ Read [`docs/memory.md`](docs/memory.md) once if you are new to the repo layout.
 
 ## Starting or resuming
 
-Use [`.cursor/skills/orient-in-project/`](.cursor/skills/orient-in-project/) to rebuild an evidence-based map of project state and next action. Human-chosen direction (when set) lives in `context.md` — distinct from the glossary [`CONTEXT.md`](CONTEXT.md). See `docs/memory.md` for the case-collision note.
+Use [`.cursor/skills/orient-in-project/`](.cursor/skills/orient-in-project/) to rebuild an evidence-based map of project state and next action. Human-chosen direction (when set) lives in `active-context.md` — distinct from the glossary [`CONTEXT.md`](CONTEXT.md).
+
+Before a long turn, run [`.cursor/skills/prepare-packet/`](.cursor/skills/prepare-packet/): it assembles the context envelope this stage calls for, so the turn starts from evidence rather than recall.
 
 When the state is known but the next procedure is not, use
 [`.cursor/skills/ask-git-memory/`](.cursor/skills/ask-git-memory/) to route the
@@ -22,11 +24,13 @@ Features travel through the stages in [`docs/agents/delivery-workflow.md`](docs/
 
 Read, in order, as relevant to the task:
 
-1. [`docs/product/charter.md`](docs/product/charter.md) — product intent (when present)
-2. [`CONTEXT.md`](CONTEXT.md) — canonical glossary (use these terms; respect `_Avoid_`)
-3. [`docs/architecture/`](docs/architecture/) — module boundaries (when present)
-4. ADR(s) under [`docs/adr/`](docs/adr/) that touch the area
-5. The active feature under [`specs/`](specs/) (and tickets under [`.scratch/`](.scratch/) if linked)
+1. `active-context.md` — the direction a human chose (when set; not the glossary)
+2. [`docs/product/charter.md`](docs/product/charter.md) — product intent (when present)
+3. [`CONTEXT.md`](CONTEXT.md) — canonical glossary (use these terms; respect `_Avoid_`)
+4. [`docs/architecture/`](docs/architecture/) — module boundaries (when present)
+5. ADR(s) under [`docs/adr/`](docs/adr/) that touch the area
+6. The active feature under [`specs/`](specs/) (and tickets under [`.scratch/`](.scratch/) if linked)
+7. [`docs/method/`](docs/method/) — how work is typed, addressed, gated and packaged, when you are creating a node or moving a stage
 
 ## Hard constraints
 
@@ -67,5 +71,5 @@ Stop and escalate before:
 - Tickets / wayfinding: [`.scratch/`](.scratch/)
 - Triage `Status:` labels: [`docs/agents/triage-labels.md`](docs/agents/triage-labels.md)
 - Domain consumption rules: [`docs/agents/domain.md`](docs/agents/domain.md)
-- Repeatable procedures: [`.cursor/skills/`](.cursor/skills/) (repo-authored) · [`.agents/skills/`](.agents/skills/) (vendored, see [`docs/agents/vendored-skills.md`](docs/agents/vendored-skills.md))
+- Repeatable procedures: [`.cursor/skills/`](.cursor/skills/) (repo-authored) · `.agents/skills/` (vendored; the directory appears on first `npx skills add` — see [`docs/agents/vendored-skills.md`](docs/agents/vendored-skills.md))
 - Checkable constraints: [`rules/`](rules/)

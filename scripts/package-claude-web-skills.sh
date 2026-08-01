@@ -6,6 +6,11 @@
 #   └── skill-name/
 #       └── SKILL.md   (+ optional resources)
 #
+# Repo skills are discovered from skills/ and scaffold/.cursor/skills/, so adding
+# a skill needs no edit here. setup-git-memory additionally embeds scaffold/ —
+# Claude Web is the one channel with no clone to copy seed bytes from — and that
+# embedded copy is checked for the tool layer before anything is packed.
+#
 # Usage:
 #   ./scripts/package-claude-web-skills.sh              # full Matt set
 #   ./scripts/package-claude-web-skills.sh --set minimal
@@ -46,7 +51,7 @@ while [[ $# -gt 0 ]]; do
     --no-plugin) INCLUDE_PLUGIN=0; shift ;;
     --repo-only) INCLUDE_MATT=0; shift ;;
     -h|--help)
-      sed -n '2,25p' "$0"
+      sed -n '2,27p' "$0"
       exit 0
       ;;
     *)
@@ -198,6 +203,21 @@ shopt -u nullglob
 if [[ ${#REPO_SKILL_SRCS[@]} -eq 0 ]]; then
   die "no repo skills found under skills/ or scaffold/.cursor/skills/"
 fi
+
+# setup-git-memory.zip carries scaffold/ inside it, and setup-git-memory's own
+# step 5 runs scripts/test/run-tests.sh from that copy. An embedded scaffold
+# missing the tool layer ships an installer that cannot prove itself, which is
+# discovered by the user rather than here.
+for _scaffold_file in \
+  scripts/check-memory.sh \
+  scripts/git-memory-resolve.sh \
+  scripts/git-memory-graph.sh \
+  scripts/git-memory-packet.sh \
+  scripts/test/run-tests.sh
+do
+  [[ -f "${ROOT}/scaffold/${_scaffold_file}" ]] \
+    || die "scaffold/${_scaffold_file} is missing; setup-git-memory.zip would embed a scaffold whose tool layer cannot run"
+done
 
 # Preflight Matt paths before writing any zip.
 MATT_SRCS=()

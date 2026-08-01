@@ -1,23 +1,112 @@
+# Documentation and memory consistency for the git-memory layer.
+#
+# THIS WORKFLOW IS PATH-FILTERED AND MUST NOT BE USED AS A REQUIRED STATUS CHECK.
+#
+# When a pull request touches none of the paths below, GitHub never starts this
+# workflow, and a required check that never starts is reported to the branch
+# protection rule as successful. The gate would then pass itself on exactly the
+# pull requests it was never allowed to inspect. Put required checks on
+# delivery.yml, which carries no path filter.
+#
+# What each job is for, and why the strict run is separate, is in
+# docs/agents/github-gates.md.
+
 name: memory
 
 on:
   push:
+    # Rename this if the default branch is not `main`.
     branches: [main]
     paths:
       - '**/*.md'
-      - 'scripts/check-memory.sh'
+      - 'scripts/**'
       - '.github/workflows/memory.yml'
   pull_request:
     paths:
       - '**/*.md'
-      - 'scripts/check-memory.sh'
+      - 'scripts/**'
       - '.github/workflows/memory.yml'
 
 jobs:
   consistency:
+    name: check-memory
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Check layered memory consistency
         run: ./scripts/check-memory.sh
+
+  strict:
+    # `--strict` adds the structural rules a v1 repository has not adopted yet:
+    # node headers on every spec, a review artifact at `Stage: ci` or later, an
+    # `Implemented in:` line on an implemented spec. Those are real findings, so
+    # the run is visible; they are not reasons to block a merge on a repository
+    # that predates them, so the job is advisory and the default run above stays
+    # the one that decides red or green.
+    #
+    # Delete `continue-on-error` once every node file in this repository carries
+    # a header. An advisory check nobody ever promotes is a check nobody reads.
+    name: check-memory --strict (advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check structural rules a v1 repository may not satisfy yet
+        run: ./scripts/check-memory.sh --strict
+
+  scripts:
+    # The scripts under scripts/ are the only executable part of the memory
+    # layer, so they are the only part that can be wrong silently. The suite
+    # builds throwaway fixture repositories and asserts on exit codes; it needs
+    # no dependencies and no network.
+    name: script test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Needed to diff against the base commit below.
+          fetch-depth: 0
+
+      - name: Decide whether the script test suite must run
+        id: decide
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ ! -x scripts/test/run-tests.sh ]; then
+            echo "no executable scripts/test/run-tests.sh here; nothing to run"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # A first push to a new branch reports an all-zero base, and a
+          # shallow or rewritten history can leave the base unreachable. When
+          # the diff cannot be computed, run the suite rather than skip it:
+          # a false skip hides a broken script, a false run costs 30 seconds.
+          if [ -z "${BASE_SHA}" ] \
+            || [ "${BASE_SHA}" = "0000000000000000000000000000000000000000" ] \
+            || ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            echo "base commit ${BASE_SHA:-<empty>} is not usable; running the suite"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Pathspec rather than a pipe into grep: under `pipefail`, grep -q
+          # closes the pipe on its first match and git exits 141, which would
+          # read as "unchanged" on exactly the pull requests that changed a
+          # script.
+          changed=$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" -- scripts/)
+          if [ -n "${changed}" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "scripts/ unchanged in this range"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run the script test suite
+        if: steps.decide.outputs.run == 'true'
+        run: ./scripts/test/run-tests.sh

@@ -93,11 +93,14 @@ npx skills@latest update
 | Publish tickets to the tracker | `.scratch/<slug>/issues/NN-*.md`, per [`issue-tracker.md`](issue-tracker.md) |
 | Wayfinding map, child tickets, frontier | "Wayfinding operations" in [`issue-tracker.md`](issue-tracker.md) |
 | Save research "where the repo already keeps such notes" | `specs/<NN>-<slug>/research.md`, or `spikes/` for a timeboxed question |
-| A prototype is throwaway code | `spikes/` — never a module under `replays_service/`, `frontend/` or `replay-parser-api/` |
-| Documented coding standards (`code-review` Standards axis) | [`../../rules/`](../../rules/), [`../architecture/boundaries.md`](../architecture/README.md), [`../../CONTEXT.md`](../../CONTEXT.md), [`../../AGENTS.md`](../../AGENTS.md) |
+| A prototype is throwaway code | `spikes/<slug>/<name>/` — never a module inside the product source tree, whatever this repository calls it |
+| Documented coding standards (`code-review` Standards axis) | [`../../rules/`](../../rules/), [`../architecture/`](../architecture/README.md), [`../../CONTEXT.md`](../../CONTEXT.md), [`../../AGENTS.md`](../../AGENTS.md) |
 | The originating spec (`code-review` Spec axis) | `specs/<NN>-<slug>/acceptance.md`, then `spec.md` |
-| "Run typechecking and the test suite" | The commands in [`../../AGENTS.md`](../../AGENTS.md); Python only inside `replay-parser-api/.venv` |
+| "Run typechecking and the test suite" | The commands in [`../../AGENTS.md`](../../AGENTS.md), which is their only home — a skill that hard-codes a command drifts the first time the toolchain moves |
 | Write an ADR / update the glossary | [`domain.md`](domain.md) and [`../../templates/adr.md`](../../templates/adr.md) |
+| A ticket, a spec or a spike is a bare markdown file | Each is a **node** and opens with an `ID:` / `Type:` / `Parent:` header — see [`../memory.md`](../memory.md), "Node headers". Add the lines when you land an upstream-shaped file |
+| Process boilerplate lives inside the skill that uses it | The **method layer**, [`../method/`](../method/): gates, ticket skeletons, review language and handoff shapes carry `M:` addresses and are cited, not pasted |
+| Decide per turn what context to paste in | The **packet profile** for the stage, [`../method/packet-profiles.md`](../method/packet-profiles.md). Run [`prepare-packet`](../../.cursor/skills/prepare-packet/) before a long turn instead of improvising the envelope |
 | `implement`: "commit your work to the current branch" | Commit on a branch, open a PR, and move the `Stage:` line — see [`delivery-workflow.md`](delivery-workflow.md) |
 | `handoff`: save to the OS temp directory | A Cloud Agent's temp directory dies with the VM; put the handoff in the PR description instead |
 | `improve-codebase-architecture`: write the HTML report to the OS temp directory and open it | Same caveat — nothing lands in the repo, so summarise the Top recommendation in the PR or the chat. A recommendation you adopt becomes a `request`, not a silent refactor |
@@ -111,8 +114,8 @@ Upstream `to-spec` writes one document (Problem Statement, Solution, User
 Stories, Implementation Decisions, Testing Decisions, Out of Scope) and labels it
 `ready-for-agent`. This repo splits a feature across four files whose presence
 `scripts/check-memory.sh` enforces, and tracks state with `Status:` / `Stage:`
-lines rather than a label. Specs `005`–`007` still carry the upstream shape from
-before that rule existed.
+lines rather than a label. A spec migrated in from before that rule may still carry
+the upstream one-document shape; leave it and split at the next real change.
 
 **Resolution:** [`create-feature-spec`](../../.cursor/skills/create-feature-spec/)
 owns stage `spec`; `to-spec` is how to *think* about the content. Sections land
@@ -133,7 +136,7 @@ A spec gets no triage label. Its state is the `Status:` and `Stage:` lines.
 
 Upstream's local ticket template writes `**Status:** ready-for-agent` in bold;
 older tickets here use a plain `Status:` line; `wayfinder` adds `claimed` /
-`resolved`; `.scratch/replay-facts-tools/` uses `done`.
+`resolved`; an implementation queue closes a ticket with `done`.
 
 **Resolution:** both line forms are accepted, and the permitted values are the
 table in [`triage-labels.md`](triage-labels.md) — now including the repo-local
@@ -158,3 +161,33 @@ a title and one dense paragraph, nothing else.
 it knows the paths, the test commands and the `Stage:` line. It delegates the
 craft to the vendored one. Upstream's `disable-model-invocation` on the
 overlapping skills already enforces this by default.
+
+### 5. Work-type vocabulary
+
+`/wayfinder` writes a `Type:` line on every child ticket it creates, drawn from its
+own four-value set — including `grilling` (a ticket that exists to interrogate a
+plan) and `task` (a ticket that exists to do the work). This repository types every
+node from one closed set of eleven values, defined in
+[`../method/work-types.md`](../method/work-types.md) and checked by
+`scripts/check-memory.sh`.
+
+**Resolution:** rewrite the line as the ticket arrives.
+
+| `/wayfinder` writes | Write instead |
+|---------------------|---------------|
+| `Type: grilling` | `research` |
+| `Type: task` | `implementation` |
+
+The two aliases are **not** added to the checker's accepted set, and that is the
+point of the resolution rather than an oversight. A ticket left carrying
+`Type: grilling` fails the check with the offending value named, which costs one
+edit. Accepting it would cost the closed set: two words for one type, a legality
+table that is no longer exhaustive, and a `grep 'Type: research'` that silently
+misses a third of the queue. A drifted vocabulary must fail loudly.
+
+Two smaller adaptations travel with it. `/wayfinder` numbers blockers
+(`Blocked by: 01, 04`); write addresses instead (`Blocked by: T:007/01, T:007/04`),
+so the line survives the ticket being read outside its own folder. And its child
+tickets get the rest of the node header — `ID:`, `Parent:` — per
+[`../memory.md`](../memory.md). Never a `Stage:` line: the stage belongs to the
+feature.

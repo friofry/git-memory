@@ -30,6 +30,34 @@ Stages 7–9 form a loop: a review finding sends the feature back to `rework`, a
 fixed code goes through `checks` again. The `Stage:` line records the stage
 **currently in progress**, so moving it backwards is normal and expected.
 
+## Gates on the transitions
+
+The table above says what each stage is done when. A **gate** turns one of those
+"done when" clauses into something that blocks the next stage and has a name you
+can put in a `Refs:` line, a PR body or a prompt. Gates add no stages; they are the
+enforcement projection of the table above.
+
+| Transition | Gate | Address |
+|------------|------|---------|
+| `request` → `research` / `spec` | Request | [`M:gate-request`](../method/gates.md) |
+| `approval` → `plan` | Approval | [`M:gate-approval`](../method/gates.md) |
+| `checks` → `review` | Checks | [`M:gate-checks`](../method/gates.md) |
+| `review` → `ci` | Review | [`M:gate-review`](../method/gates.md) |
+| `ci` → `acceptance` | CI | [`M:gate-ci`](../method/gates.md) |
+| `acceptance` → `memory` | Acceptance | [`M:gate-acceptance`](../method/gates.md) |
+| `memory` → `Status: implemented` | Memory | [`M:gate-memory`](../method/gates.md) |
+
+Who opens each gate, what evidence closes it, and the one failure mode it exists to
+prevent are in [`../method/gates.md`](../method/gates.md). Do not restate the
+evidence column here or in a skill — cite the address.
+
+The remaining transitions (`research` → `spec`, `spec` → `approval`, `plan` →
+`build`, `build` → `checks`, `review` → `rework`, `rework` → `checks`) carry no
+gate. They move work inside one owner's hands, and the next gate downstream
+re-examines the result anyway. A gate on every arrow would be ceremony that gets
+skipped, and a gate people skip is worse than no gate: it makes the passed ones
+look optional too.
+
 ## Stage and status
 
 `Stage:` is the fine-grained position; `Status:` is the coarse one that
@@ -52,6 +80,50 @@ itself, run without a spec and therefore without a stage — orientation reports
 those from git evidence alone. The threshold for opening a spec is the one in
 [`../../.cursor/skills/create-feature-spec/`](../../.cursor/skills/create-feature-spec/).
 
+## The Type axis is not the stage
+
+`Stage:` answers "where is this feature in its lifecycle?". `Type:` answers "what
+kind of work is this node?". They are different questions about different things,
+and the eleven `Type:` values are defined once, in
+[`../method/work-types.md`](../method/work-types.md) — this file does not repeat
+them.
+
+Two consequences bind here:
+
+- A ticket's type is independent of the feature's stage. While
+  `specs/007-auth-envelope/spec.md` reads `Stage: build`, the queue underneath it
+  can hold a `Type: research` ticket, a `Type: interface` ticket and a
+  `Type: test` ticket at once.
+- Four of the type values (`research`, `review`, `rework`, `memory`) are spelled
+  exactly like stages. The collision is deliberate and harmless while the two
+  questions stay apart: `Type: memory` is a ticket that writes facts back,
+  `Stage: memory` is a feature at its closing stage. Never write "the feature is in
+  the research type" or "the ticket's stage" — the first has no meaning and the
+  second is the one-home rule breaking.
+
+Only `feature`, `bug` and `architecture` are legal on a spec; a ticket may carry
+any of the eleven; a spike is `research` or `prototype`. The legality table is in
+[`../method/work-types.md`](../method/work-types.md) and `scripts/check-memory.sh`
+enforces it.
+
+## What the packet for this stage carries
+
+Before a long agent turn, assemble a **packet**: the context envelope for one node
+at one stage, built from six layers of which the stage's profile keeps only some.
+The profile per stage is [`../method/packet-profiles.md`](../method/packet-profiles.md);
+each row is addressable as `M:packet-<stage>`.
+
+Read the profile as part of the stage. A `build` turn gets Route, Contract and
+Slice and deliberately omits the glossary; a `review` turn adds Memory and Evidence
+back because a reviewer without the architecture context reviews syntax. `request`
+and `ci` have no profile — one is a human writing a sentence, the other is GitHub
+Actions.
+
+Assemble it with `./scripts/git-memory-packet.sh F:007-auth-envelope build`, or by
+hand from that file's layer table when the script is not installed. Do not commit
+the result: a packet is a projection, recomputed per turn — see
+[`../memory.md`](../memory.md), "Projections".
+
 ## Which skill performs which stage
 
 Repo-authored skills ([`../../.cursor/skills/`](../../.cursor/skills/)) are the
@@ -59,13 +131,19 @@ entry point for a stage: they know the paths, the commands and the `Stage:` line
 Vendored skills (`../../.agents/skills/`) carry the craft.
 How the two bind is [`vendored-skills.md`](vendored-skills.md).
 
+Start any long turn with [`prepare-packet`](../../.cursor/skills/prepare-packet/),
+whatever the stage: it prints the packet the stage's profile calls for, so the turn
+begins from assembled evidence instead of from whatever the session happened to
+remember.
+
 | Stage | Entry point | Craft |
 |-------|-------------|-------|
+| *(any stage, before a long turn)* | [`../../.cursor/skills/prepare-packet/`](../../.cursor/skills/prepare-packet/) — prints this stage's packet | — |
 | `request` | Human | — |
 | `research` | `../../.agents/skills/research/` | `../../.agents/skills/grilling/`, `../../.agents/skills/prototype/` for a timeboxed question |
 | `spec` | [`../../.cursor/skills/create-feature-spec/`](../../.cursor/skills/create-feature-spec/) | `../../.agents/skills/to-spec/`, `../../.agents/skills/codebase-design/` for the seams |
 | `approval` | Human | `../../.agents/skills/grill-with-docs/`, `../../.agents/skills/domain-modeling/` — ADR and glossary as it goes |
-| `plan` | `../../.agents/skills/to-tickets/` | `../../.agents/skills/wayfinder/` when the effort outgrows one session; `../../.agents/skills/triage/` to label the queue |
+| `plan` | [`../../.cursor/skills/plan-feature/`](../../.cursor/skills/plan-feature/) | `../../.agents/skills/wayfinder/` when the effort outgrows one session |
 | `build` | [`../../.cursor/skills/implement-feature/`](../../.cursor/skills/implement-feature/) | `../../.agents/skills/implement/`, `../../.agents/skills/tdd/`, `../../.agents/skills/codebase-design/` |
 | `checks` | The commands in [`../../AGENTS.md`](../../AGENTS.md) | `../../.agents/skills/tdd/` |
 | `review` | [`../../.cursor/skills/review-change/`](../../.cursor/skills/review-change/), [`../../.cursor/skills/review-architecture/`](../../.cursor/skills/review-architecture/) | `../../.agents/skills/code-review/` — Standards and Spec axes |

@@ -5,245 +5,129 @@ description: Recover an evidence-based map of project state, the delivery stage 
 
 # Orient in project
 
-Use this skill when starting a new session, switching branches,
-resuming interrupted work, or when the current task context is unclear.
+Recover where this project is from repository evidence, not from memory of the
+conversation. Use when starting a session, switching branches, resuming
+interrupted work, or when the current task is unclear.
 
-Do not modify production code.
-
-## Role relative to `context.md`
+## Role relative to `active-context.md`
 
 | Artifact | Role |
 |----------|------|
-| `context.md` | Human-chosen direction and active goal (intent) |
-| This skill | Recover factual state from repository evidence |
+| `active-context.md` | Human-chosen direction and active goal — intent |
+| This skill | Factual state recovered from repository evidence |
 
-Do not confuse `context.md` with `CONTEXT.md` (canonical glossary). See `docs/memory.md`.
-
-## Goal
-
-Produce a compact and evidence-based map of:
-
-- what project this is;
-- what is being changed;
-- where the change belongs architecturally;
-- what state the work is currently in;
-- what should happen next.
+`active-context.md` is not `CONTEXT.md`, the canonical domain glossary, and neither
+substitutes for the other — [`../../../docs/memory.md`](../../../docs/memory.md). A
+root `context.md` is the pre-rename layout: report it with the fix,
+`git mv context.md active-context.md`.
 
 ## Read order
 
-Read only as much as necessary.
+Read in this order and stop at the first step after which you can name the stage,
+the evidence for it, and the next action. Each step names what selects the files it
+covers; anything no step selects is out of scope for orienting.
 
 1. `AGENTS.md`
-2. `context.md`, if present
-3. `specs/README.md` — generated stage and status of every feature
+2. `active-context.md`, if present
+3. `specs/README.md` — the generated stage and status of every feature
 4. current branch name and recent commits
-5. active feature specification, including its `Stage:` line
-6. `docs/agents/delivery-workflow.md` — what that stage demands and what comes next
-7. relevant domain documentation
-8. relevant architecture boundaries and ADRs
-9. task-related source files
-10. current tests and verification output
+5. the active feature's `spec.md` header: `ID:`, `Type:`, `Status:`, `Stage:`
+6. [`../../../docs/agents/delivery-workflow.md`](../../../docs/agents/delivery-workflow.md)
+   — what that stage demands and what comes next
+7. the unblocked tickets under `.scratch/<slug>/issues/` — their `Type:`,
+   `Status:` and `Blocked by:` lines
+8. the `CONTEXT.md` headings named by the `Refs:` lines of that spec and those
+   tickets — those entries only, never the glossary end to end
+9. the ADRs named by the same `Refs:` lines, plus the `docs/architecture/` boundary
+   document covering the modules those tickets touch
+10. the source files those tickets name
+11. the verification commands `AGENTS.md` lists, and the output of the last run
 
-Do not read the whole repository unless necessary.
+Steps 8–11 are selected by a `Refs:` line, a ticket, or `AGENTS.md` — never by a
+judgement about what looks relevant. If nothing names a file, you do not read it.
+If the position is clear after step 6, stop there and list the steps you skipped.
 
 ## Determine the active task
 
-Look for evidence in this order:
+Take the first of these that exists: an explicitly provided user task; the
+specification named by `active-context.md`; the branch name; recent commits;
+modified or untracked files; TODO or task files. If two of them point at different
+work, report the conflict — do not silently pick one.
 
-1. explicitly provided user task;
-2. active specification referenced by `context.md`;
-3. current branch name;
-4. recent commits;
-5. modified or untracked files;
-6. TODO or task files.
+## Establish the stage in three steps
 
-If these sources conflict, report the conflict.
-Do not silently choose one interpretation.
-
-## Produce this report
-
-### 1. Project
-
-One or two sentences describing the project and its main user outcome.
-
-### 2. Current objective
-
-Describe the concrete outcome currently being pursued.
-
-Do not describe implementation details as the objective.
-
-### 3. Current delivery stage
-
-Report where the active feature sits in the delivery workflow
-(`docs/agents/delivery-workflow.md`).
-
-| # | Stage | Owner | Waiting on |
-|---|-------|-------|------------|
-| 1 | `request` | Human | The wanted outcome written down |
-| 2 | `research` | Research agent | Inventory of code and memory |
-| 3 | `spec` | Spec agent | Spec, design, acceptance |
-| 4 | `approval` | Human | Approval of meaning and architecture |
-| 5 | `plan` | Planner | Implementation plan / tickets |
-| 6 | `build` | Builder | Implementation in a worktree |
-| 7 | `checks` | Builder | Executable checks passing locally |
-| 8 | `review` | Reviewer | An independent attempt to find defects |
-| 9 | `rework` | Builder | Fixes for review findings |
-| 10 | `ci` | CI | Independent repeat of the checks |
-| 11 | `acceptance` | Human | Accepting demo and evidence |
-| 12 | `memory` | Agent | Durable Git memory updated |
-
-Do this in three steps:
+The twelve stages, their owners and the evidence each one leaves are defined once,
+in [`../../../docs/agents/delivery-workflow.md`](../../../docs/agents/delivery-workflow.md).
+Read them there. This skill does not restate the table; it establishes which row
+the repository is actually on.
 
 1. **Claim** — read the `Stage:` line of the active `specs/<NN>-<slug>/spec.md`.
    With no active spec, say so and report the stage as `request` or `unknown`.
-2. **Corroborate** — check the evidence that stage demands
-   (`docs/agents/delivery-workflow.md`, column "Evidence lives in"): spec files,
-   tickets, branch commits, review notes, CI runs, memory updates.
+2. **Corroborate** — check the evidence that stage demands, from the workflow
+   table's "Evidence lives in" column: spec files, tickets, branch commits, review
+   artifact, CI runs, memory updates. What blocks the next transition, and what
+   evidence closes it, is in
+   [`../../../docs/method/gates.md`](../../../docs/method/gates.md) — cite the
+   `M:gate-*` address rather than restating it.
 3. **Reconcile** — if the evidence contradicts the line, report both and mark the
-   conflict; never rewrite the line while orienting.
+   conflict. Never rewrite the line while orienting.
 
-State the stage as `N/12 <stage> — waiting on <owner>`, then the one-line
-evidence for it. If several features are active, do this per feature and say
-which one this session is about.
+State it in the form section 3 of [`REPORT-SHAPE.md`](REPORT-SHAPE.md) fixes:
+`N/12 <stage> — waiting on <owner>`, then the one line of evidence for it.
 
 Loops are normal: `review` → `rework` → `checks` may repeat. Report the stage
-currently in progress, not the furthest one ever reached.
+**currently in progress**, not the furthest one ever reached. If the position
+cannot be established from evidence, say `blocked` or `unknown` rather than
+guessing a stage.
 
-If work is stuck or the position cannot be established from evidence, say
-`blocked` or `unknown` instead of guessing a stage.
+## Name every node by address
 
-### 4. Architecture location
+The report identifies work by address, not by prose description: `F:007-auth-envelope`,
+`T:007/03`, `S:007/proto-a`. Give the resolved path alongside the address the first
+time each one appears, so a reader can click through and a script can resolve it.
+Forms and resolution rules are in
+[`../../../docs/method/addressing.md`](../../../docs/method/addressing.md). If
+several features are active, orient per feature and say which one this session is
+about.
 
-Show the relevant path through the system.
+## Evidence labels
 
-Example:
+For each important conclusion, name the file, test, commit or repository
+observation supporting it, and label it `Observed` (read directly this session),
+`Inferred` (drawn from what was observed) or `Unknown` (not established, and it
+affects the next decision).
 
-MCP client
-→ MCP adapter
-→ replay application service
-→ parser core
+Never present an inference as an observed fact. An `Inferred` stage that nobody
+checked is the failure this skill exists to prevent: it reads exactly like a
+verified one and sends the next agent to the wrong gate.
 
-List the affected module boundaries.
+Labelled lines read like this, and every conclusion in the report is one of them:
 
-### 5. Active artifacts
+```
+Observed: specs/007-auth-envelope/spec.md carries Stage: build; three commits on
+          claude/auth-envelope touch src/events/.
+Inferred: T:007/04 is the frontier — it is the only unblocked, unclaimed ticket.
+Unknown:  whether CI ran on the head commit. Nothing records a run, and it decides
+          whether the next gate is M:gate-checks or M:gate-ci.
+```
 
-List only relevant artifacts:
+## Produce the report
 
-- feature spec;
-- acceptance criteria;
-- design;
-- ADRs;
-- domain docs;
-- skills;
-- tests;
-- spikes.
-
-For each artifact, state its role.
-
-### 6. Observed state
-
-Separate:
-
-- completed;
-- in progress;
-- not started.
-
-Base this on repository evidence, not assumptions.
-
-### 7. Local changes
-
-Summarize:
-
-- modified files;
-- untracked files;
-- recent commits;
-- failing checks.
-
-Do not expose secrets or irrelevant generated files.
-
-### 8. Known, assumed, unknown
-
-Use three separate sections.
-
-#### Known
-
-Directly supported by code, tests, specifications, or repository state.
-
-#### Assumed
-
-Likely true but not directly confirmed.
-
-#### Unknown
-
-Important missing information that affects the next decision.
-
-### 9. Risks and inconsistencies
-
-Look for:
-
-- spec and code disagreement;
-- architecture-boundary violations;
-- undocumented public contract changes;
-- unclear source of truth;
-- unbounded scope;
-- stale context documents;
-- failing or absent verification;
-- unrelated work mixed into the branch.
-
-### 10. Recommended next action
-
-Recommend exactly one next action.
-
-It should be small, concrete, and either finish the current delivery stage or
-open the next one. Name the stage it belongs to and its owner — when the owner
-is a human (`request`, `approval`, `acceptance`), the recommendation is what to
-put in front of them, not work to start.
-
-Examples:
-
-- clarify one acceptance condition;
-- create a timeboxed spike;
-- review an architecture design;
-- implement one vertical slice;
-- run verification;
-- perform independent review.
-
-### 11. Human decisions required
-
-List only decisions that should not be made autonomously, such as:
-
-- public contract changes;
-- schema migrations;
-- security policy;
-- module-boundary changes;
-- significant new dependencies;
-- destructive operations.
-
-If none are required, state:
-
-`No human decision is currently required.`
-
-## Evidence rules
-
-For each important conclusion, include the file, test, commit,
-or repository observation supporting it.
-
-Use these labels:
-
-- `Observed`
-- `Inferred`
-- `Unknown`
-
-Never present an inference as an observed fact.
+Eleven sections, in fixed order, defined in
+[`REPORT-SHAPE.md`](REPORT-SHAPE.md). Follow that file; do not improvise a
+shorter shape because the project looks small. Omitting a section is allowed only
+by writing the section heading and the reason it is empty.
 
 ## Stop conditions
 
-Do not:
-
-- implement the feature;
-- refactor production code;
-- update specifications;
-- create commits;
-- resolve architectural conflicts silently.
+- Do not implement the feature.
+- Do not modify production code — not a refactor, not a rename, not a formatting
+  fix you are certain of.
+- Do not update specifications, or move a `Stage:` line — including one you have
+  proved wrong. The mismatch is the finding.
+- Do not create commits.
+- Do not resolve an architectural conflict silently; report it under section 9.
+- Do not assemble a packet here. When the report recommends a long turn, name
+  [`../prepare-packet/SKILL.md`](../prepare-packet/SKILL.md) as its first step.
 
 Stop after producing the orientation report.
