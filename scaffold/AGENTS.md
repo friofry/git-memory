@@ -32,6 +32,21 @@ Read, in order, as relevant to the task:
 6. The active feature under [`specs/`](specs/) (and tickets under [`.scratch/`](.scratch/) if linked)
 7. [`docs/method/`](docs/method/) — how work is typed, addressed, gated and packaged, when you are creating a node or moving a stage
 
+Read the method layer **by address, not by file**. It is around 20k tokens whole
+and any one thing you need from it is a few hundred:
+
+```bash
+./scripts/git-memory-resolve.sh --print M:gate-approval
+```
+
+That prints the section and stops at the next heading of the same level. Opening
+`docs/method/gates.md` to quote one gate costs ten times as much for the same
+words, and does it again on every citation.
+
+Likewise, before a long turn take the stage's packet rather than reading the
+feature's four files: `./scripts/git-memory-packet.sh <address> <stage>` is about
+an eighth of the same content, chosen for that stage.
+
 ## Hard constraints
 
 - Use glossary terms from `CONTEXT.md`; do not invent synonyms marked `_Avoid_`.

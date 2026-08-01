@@ -4,6 +4,7 @@
 #
 #   scripts/git-memory-resolve.sh F:007-auth-envelope   print the repo-relative path
 #   scripts/git-memory-resolve.sh --check T:007/03      silent; exit 0 if it resolves
+#   scripts/git-memory-resolve.sh --print M:gate-approval  print only that section
 #   scripts/git-memory-resolve.sh --all                 print every address and its path
 #   scripts/git-memory-resolve.sh --help                usage, exit 0
 #
@@ -22,6 +23,7 @@ usage() {
 usage: git-memory-resolve.sh <address>
        git-memory-resolve.sh resolve <address>
        git-memory-resolve.sh --check <address>
+       git-memory-resolve.sh --print <address>
        git-memory-resolve.sh --all
        git-memory-resolve.sh --help
 
@@ -41,6 +43,14 @@ T: and S: carry the feature number, not its slug, so the resolver reads the slug
 off specs/<NN>-*/ on every resolution and a renamed feature invalidates nothing.
 
   --check    print nothing; exit 0 if the address resolves, 1 if it does not.
+  --print    print the section the address names, not the file that contains it.
+             An address resolves to "path#anchor" and a reader that then opens
+             the whole file pays for the file to quote one heading of it:
+             docs/method/gates.md is six times the size of the one gate an
+             M: address names. The section runs from its heading to the next
+             heading at the same level or higher, so sub-headings come with it.
+             An address naming a directory prints the path; one with no anchor
+             prints the file.
   --all      print "<address><TAB><path>" for every address the repository
              declares, in all six families, features first and each feature
              followed by its tickets and spikes. This is the address index other
@@ -340,6 +350,66 @@ list_all() {
   method_declarations
 }
 
+# --- 4b. printing what an address points at ------------------------------------
+
+# An address resolves to "path#anchor", and a reader that then opens the whole
+# file pays for the file to quote one section of it. docs/method/gates.md is
+# 2.7k tokens; M:gate-approval is 0.5k of that. Ten citations a session is the
+# difference between 5k and 27k spent on the same content.
+#
+# The anchor rule is not restated here: the heading is matched by running the
+# same headings() pass that built the index, so a change to how an anchor is
+# computed cannot make --print and resolve disagree.
+print_address() { # address
+  local target file anchor level found
+  target=$(resolve_address "$1") || return 1
+  file=${target%%#*}
+  case "$target" in
+    *\#*) anchor=${target#*\#} ;;
+    *)    anchor="" ;;
+  esac
+
+  # A directory address (a feature, a spike) has no section to cut out; naming
+  # the path is the whole answer, and printing a folder is not.
+  if [ -d "$file" ]; then
+    printf '%s\n' "$target"
+    return 0
+  fi
+  if [ -z "$anchor" ]; then
+    cat "$file"
+    return 0
+  fi
+
+  # The level of the heading that owns this anchor, from the same index.
+  level=$(headings "$file" | awk -F'\t' -v a="$anchor" '$3 == a { print $1; exit }')
+  if [ -z "$level" ]; then
+    diag "anchor '$anchor' is not a heading in $file" \
+      "the index and the file disagree; re-run --check on this address"
+    return 1
+  fi
+
+  awk -v want="$anchor" -v lvl="$level" '
+    { sub(/\r$/, "") }
+    /^```/ { fenced = !fenced; if (inside) print; next }
+    fenced { if (inside) print; next }
+    /^#+[ \t]*[^ \t]/ {
+      match($0, /^#+/)
+      here = RLENGTH
+      text = $0
+      sub(/^#+[ \t]*/, "", text)
+      sub(/[ \t]*$/, "", text)
+      anchor = tolower(text)
+      gsub(/[^a-z0-9 _-]/, "", anchor)
+      gsub(/ /, "-", anchor)
+      if (anchor == want) { inside = 1; print; next }
+      # Stop at the next heading at the same level or higher: a sub-heading
+      # belongs to the section, a sibling starts a different one.
+      if (inside && here <= lvl) { exit }
+    }
+    inside { print }
+  ' "$file"
+}
+
 # --- 5. dispatch ---------------------------------------------------------------
 
 case "${1:-}" in
@@ -358,6 +428,15 @@ case "${1:-}" in
     fi
     list_all
     exit 0
+    ;;
+  --print)
+    shift
+    if [ "$#" -ne 1 ]; then
+      printf '%s: --print takes exactly one address\n' "$self" >&2
+      exit 1
+    fi
+    print_address "$1"
+    exit $?
     ;;
   --check)
     shift

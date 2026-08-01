@@ -677,7 +677,52 @@ test_resolver() {
 
   run "$repo" git-memory-resolve.sh --help
   expect_status 0 "resolver: --help exits 0"
+
   expect_has "$RUN_OUT" "usage: git-memory-resolve.sh" "resolver: --help prints a usage block"
+
+  # --- --print: the section, not the file that contains it ---
+  run "$repo" git-memory-resolve.sh --print M:gate-approval
+  expect_status 0 "resolver: --print exits 0 on a method address"
+  expect_has "$RUN_OUT" 'M:gate-approval' "resolver: --print opens with the heading it was asked for"
+  expect_lacks "$RUN_OUT" 'M:gate-review' "resolver: --print stops before the next gate"
+  out=$(wc -c < "$repo/docs/method/gates.md")
+  if [ "${#RUN_OUT}" -lt "$out" ]; then
+    pass "resolver: --print returns less than the whole file"
+  else
+    fail "resolver: --print returns less than the whole file" "fewer than $out bytes" "${#RUN_OUT}"
+  fi
+
+  # A sub-heading belongs to its section; a sibling at the same level does not.
+  write "$repo/CONTEXT.md" <<'EOF'
+# Glossary
+
+## Event envelope
+
+A signed wrapper around one domain event.
+
+### Fields
+
+Header, payload, signature.
+
+## Replay window
+
+A different term entirely.
+EOF
+  run "$repo" git-memory-resolve.sh --print TERM:event-envelope
+  expect_status 0 "resolver: --print exits 0 on a term address"
+  expect_has "$RUN_OUT" "signed wrapper" "resolver: --print carries the term's body"
+  expect_has "$RUN_OUT" "Header, payload" "resolver: --print carries a sub-heading of the section"
+  expect_lacks "$RUN_OUT" "different term entirely" "resolver: --print stops at the next term"
+
+  # A directory address has no section to cut out.
+  run "$repo" git-memory-resolve.sh --print F:007-auth-envelope
+  expect_status 0 "resolver: --print exits 0 on a feature address"
+  expect_has "$RUN_OUT" "specs/007-auth-envelope/" "resolver: --print names the path for a directory address"
+
+  run "$repo" git-memory-resolve.sh --print M:nonexistent-gate
+  expect_status 1 "resolver: --print exits 1 on an address that resolves to nothing"
+  run "$repo" git-memory-resolve.sh --print M:gate-approval M:gate-review
+  expect_status 1 "resolver: --print refuses two addresses"
 
   # F: — the address the operator types, slug and all.
   run "$repo" git-memory-resolve.sh resolve F:007-auth-envelope
